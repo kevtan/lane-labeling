@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,12 +12,13 @@
     <script src="scripts/lines.js"></script>
     <title>Prototype</title>
 </head>
+
 <body>
     <h1>Prototype</h1>
     <input type="file" id="file_input">
-    <button id="rect">Rectangle</button>
-    <button id="green">Green Line</button>
-    <button id="red">Red Line</button>
+    <button id="rect" onclick="changeButton('rect')">Rectangle</button>
+    <button id="green" onclick="changeButton('green')">Green Line</button>
+    <button id="red" onclick="changeButton('red')">Red Line</button>
     <button id="brush width">Brush Width</button>
     <div>
         <h2>Input</h2>
@@ -37,6 +39,9 @@
         const file_input = document.getElementById('file_input');
         let image = document.createElement('img');
         file_input.onchange = (e) => {
+            // clear canvas of any existing objects
+            input.clear();
+            // load the file
             image.src = URL.createObjectURL(e.target.files[0]);
             image.onload = _ => {
                 input.setDimensions({ width: image.width, height: image.height });
@@ -53,13 +58,46 @@
                 );
             }
         }
-        const circleBrush = new fabric.PencilBrush(input);
-        circleBrush.width = 10;
-        input.freeDrawingBrush = circleBrush;
-        input.isDrawingMode = true;
-        // input.on("mouse:down", circleBrush.onMouseDown.bind(circleBrush));
-        // input.on("mouse:move", circleBrush.onMouseMove.bind(circleBrush));
-        // input.on("mouse:up", circleBrush.onMouseUp.bind(circleBrush));
+        //show button value
+        function changeButton(value) {
+            input.__eventListeners = {} // TODO: Fix, hacky
+            if (value == 'rect') {
+                console.log("Here!")
+                input.isDrawingMode = false;
+                input.on("mouse:down", startRect);
+                input.on("mouse:up", endRect);
+            } else {
+                input.isDrawingMode = true;
+                const circleBrush = new fabric.PencilBrush(input);
+                circleBrush.width = 3;
+                circleBrush.color = value;
+                input.freeDrawingBrush = circleBrush;
+                input.on("mouse:up", _ => {
+                    // step 1: extract out points
+                    const points = circleBrush._points;
+                    // step 2: draw points onto mask
+                    const pixel_value = new cv.Scalar(value == 'green' ? cv.GC_FGD : cv.GC_BGD);
+                    console.log(pixel_value);
+                    for (let i = 0; i < points.length - 1; i++) {
+                        const start = points[i];
+                        const end = points[i + 1];
+                        cv.line(result.mask, start, end, pixel_value);
+                    }
+                    // step 3: invoke mask grabcut
+                    result = maskGrabCut(
+                        cv_image,
+                        result.mask,
+                        result.bgdModel,
+                        result.fgdModel
+                    );
+                    // step 4: render the results
+                    const fg_points = extractMaskPoints(result.mask, isForeground);
+                    updateMask(result.mask, fg_points, 255);
+                    cv.imshow("extracted", result.mask);
+                });
+            }
+        }
     </script>
 </body>
+
 </html>

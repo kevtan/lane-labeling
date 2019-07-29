@@ -87,7 +87,7 @@ function maskGrabCut(img, mask, bgdModel, fgdModel, iters = 1) {
         bgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1)
         fgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1)
     }
-    cv.grabCut(img, mask, null, bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK)
+    cv.grabCut(img, mask, new cv.Rect(), bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK)
     return { "mask": mask, "bgdModel": bgdModel, "fgdModel": fgdModel }
 }
 
