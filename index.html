@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="node_modules/opencv.js/opencv.js"></script>
+    <script src="node_modules/fabric/dist/fabric.js"></script>
+    <script src="scripts/grabcut.js"></script>
+    <title>Prototype</title>
+    <style>
+        canvas {
+            width: 1032px;
+            height: 772px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prototype</h1>
+    <input type="file" id="file_input">
+    <button id="rect">Rectangle</button>
+    <button id="green">Green Line</button>
+    <button id="red">Red Line</button>
+    <div>
+        <h2>Input</h2>
+        <canvas id="input"></canvas>
+    </div>
+    <div>
+        <h2>Extracted</h2>
+        <canvas id="extracted"></canvas>
+    </div>
+    <script>
+        // create fabric wrappers around canvases
+        const input = new fabric.Canvas('input');
+        // global state variables
+        let img, result, extracted;
+        // file upload logic
+        const file_input = document.getElementById('file_input');
+        file_input.onchange = (e) => {
+            input.setDimensions({ width: 1032, height: 772 });
+            input.setBackgroundImage(
+                URL.createObjectURL(e.target.files[0]),
+                _ => {
+                    input.renderAll();
+                    img = cv.imread("input");
+                    cv.cvtColor(img, img, cv.COLOR_RGBA2RGB);
+                    const { width, height } = img.size();
+                    extracted = new cv.Mat.zeros(height, width, cv.CV_8UC1);
+                    cv.imshow("extracted", extracted);
+                }
+            );
+        }
+        // draw a rectangle
+        const rect_params = {
+            stroke: 'blue',
+            strokeWidth: 1,
+            fill: 'rgba(0, 0, 0, 0)'
+        }
+        let rectangle = new fabric.Rect(rect_params);
+        input.on('mouse:down', (mouse_event) => {
+            const location = mouse_event.pointer;
+            rectangle.left = location.x;
+            rectangle.top = location.y;
+        });
+        input.on('mouse:up', (mouse_event) => {
+            const location = mouse_event.pointer;
+            rectangle.width = location.x - rectangle.left;
+            rectangle.height = location.y - rectangle.top;
+            input.add(rectangle);
+            // perform rectangular grabcut
+            const rect = new cv.Rect({
+                x: rectangle.left,
+                y: rectangle.top,
+                width: rectangle.width,
+                height: rectangle.height
+            });
+            result = rectGrabCut(img, rect);
+            fg_points = extractMaskPoints(result.mask, isForeground);
+            updateMask(extracted, fg_points, 255);
+            console.log(fg_points);
+            cv.imshow("input", extracted);
+        });
+    </script>
+</body>
+</html>

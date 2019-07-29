@@ -1,0 +1,24 @@
+{
+  "name": "prototype",
+  "version": "1.0.0",
+  "description": "Lane labeling tool.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevtan/prototype.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kevtan/prototype/issues"
+  },
+  "homepage": "https://github.com/kevtan/prototype#readme",
+  "dependencies": {
+    "fabric": "^3.3.2",
+    "opencv.js": "^1.2.1"
+  }
+}
