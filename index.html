@@ -42,7 +42,7 @@
                     fabric_image,
                     _ => {
                         input.renderAll();
-                        cv_image = cv.imread("input");
+                        cv_image = cv.imread(image);
                         cv.cvtColor(cv_image, cv_image, cv.COLOR_RGBA2RGB);
                         extracted = new cv.Mat.zeros(image.height, image.width, cv.CV_8UC1);
                         cv.imshow("extracted", extracted);
@@ -74,6 +74,7 @@
             rectangle.width = Math.round(location.x - rectangle.left);
             rectangle.height = Math.round(location.y - rectangle.top);
             // add rectangle to the fabric canvas
+            console.log(rectangle)
             input.add(rectangle);
             // perform rectangular grabcut
             const rect = new cv.Rect({
@@ -83,9 +84,9 @@
                 height: rectangle.height
             });
             result = rectGrabCut(cv_image, rect);
-            fg_points = extractMaskPoints(result.mask, isForeground);
-            updateMask(extracted, fg_points, 255);
-            cv.imshow("extracted", extracted);
+            const fg_points = extractMaskPoints(result.mask, isForeground);
+            updateMask(result.mask, fg_points, 255);
+            cv.imshow("extracted", result.mask);
         });
     </script>
 </body>
