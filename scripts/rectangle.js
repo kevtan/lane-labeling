@@ -39,6 +39,7 @@ function endRect(mouse_event) {
     }
     // add rectangle to the fabric canvas
     input.add(rectangle);
+    input.renderAll();
     // perform rectangular grabcut
     const rect = new cv.Rect({
         x: rectangle.left,
@@ -48,8 +49,14 @@ function endRect(mouse_event) {
     });
     result = rectGrabCut(cv_image, rect);
     fg_points = extractMaskPoints(result.mask, isForeground);
-    const copy = result.mask.clone();
-    updateMatrix(copy, fg_points, [255])
-    cv.imshow("extracted", copy);
-    copy.delete();
+    // display result on original canvas
+    const orig_copy = cv_image_alpha.clone();
+    updateAlpha(orig_copy, fg_points, 128);
+    cv.imshow("input", orig_copy);
+    orig_copy.delete();
+    // display result on extracted canvas
+    const mask_copy = result.mask.clone();
+    updateMatrix(mask_copy, fg_points, [255])
+    cv.imshow("extracted", mask_copy);
+    mask_copy.delete();
 }

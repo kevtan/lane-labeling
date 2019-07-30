@@ -11,6 +11,11 @@
     <script src="scripts/rectangle.js"></script>
     <script src="scripts/lines.js"></script>
     <title>Prototype</title>
+    <style>
+        #visuals div {
+            display: inline-block;
+        }
+    </style>
 </head>
 
 <body>
@@ -42,6 +47,18 @@
             number.oninput = event => nInstance = parseInt(event.target.value);
         </script>
     </div>
+    <button id="satisfied" onclick="satisfied()">Satisfied</button>
+    <script>
+        /* Commits your current extraction results to instance and segmentation images. */
+        function satisfied() {
+            const segmentation_value = laneType == 'dashed' ? 100 : laneType == 'solid' ? 170 : 255;
+            updateMatrix(segmentation, fg_points, [segmentation_value]);
+            const instance_value = nInstance * 30;
+            updateMatrix(instance, fg_points, [instance_value]);
+            cv.imshow("instance", instance);
+            cv.imshow("segmentation", segmentation);
+        }
+    </script>
     <div id="visuals">
         <div>
             <h2>Input</h2>
@@ -50,19 +67,6 @@
         <div>
             <h2>Extracted</h2>
             <canvas id="extracted"></canvas>
-            <br>
-            <button id="satisfied" onclick="satisfied()">Satisfied</button>
-            <script>
-                /* Commits your current extraction results to instance and segmentation images. */
-                function satisfied () {
-                    const segmentation_value = laneType == 'dashed' ? 100 : laneType == 'solid' ? 170 : 255;
-                    updateMatrix(segmentation, fg_points, [segmentation_value]);
-                    const instance_value = nInstance * 30;
-                    updateMatrix(instance, fg_points, [instance_value]);
-                    cv.imshow("instance", instance);
-                    cv.imshow("segmentation", segmentation);
-                }
-            </script>
         </div>
         <div>
             <h2>Segmentation</h2>
@@ -79,7 +83,8 @@
         // global state variables
         let nInstance;      // (number) tracks the current instance number
         let laneType;       // (string) tracks the current lane type
-        let cv_image;       // cv.Mat image cache
+        let cv_image;       // cv.Mat image cache RGB
+        let cv_image_alpha; // cv.Mat image cache RGBA
         let result;         // result of grabcut operations
         let extracted;      // individual extraction result
         let fg_points;      // stores extraction results (array of points)
@@ -100,8 +105,9 @@
                     fabric_image,
                     _ => {
                         input.renderAll();
-                        cv_image = cv.imread(image);
-                        cv.cvtColor(cv_image, cv_image, cv.COLOR_RGBA2RGB);
+                        cv_image_alpha = cv.imread(image);
+                        cv_image = new cv.Mat();
+                        cv.cvtColor(cv_image_alpha, cv_image, cv.COLOR_RGBA2RGB);
                         extracted = new cv.Mat.zeros(image.height, image.width, cv.CV_8UC1);
                         segmentation = extracted.clone();
                         instance = extracted.clone();
@@ -114,7 +120,7 @@
         }
         //show button value
         function changeButton(value) {
-            input._eventListeners = {} // TODO: Fix, hacky
+            input.__eventListeners = {} // TODO: Fix, hacky
             if (value == 'rect') {
                 input.isDrawingMode = false;
                 input.on("mouse:down", startRect);

@@ -133,3 +133,18 @@ function updateMatrix(matrix, points, value) {
         }
     );
 }
+
+/*
+@brief Updates an OpenCV matrix at given points to have a certain transparency level (alpha value)
+@param matrix (cv.Mat)
+@param points (Array)
+@param alpha (number)
+*/
+function updateAlpha(matrix, points, alpha) {
+    const ALPHA_CHANNEL = 3;
+    points.map(
+        point => {
+            matrix.ucharPtr(point[0], point[1])[ALPHA_CHANNEL] = alpha;
+        }
+    );
+}
