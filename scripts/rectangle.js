@@ -47,9 +47,9 @@ function endRect(mouse_event) {
         height: rectangle.height
     });
     result = rectGrabCut(cv_image, rect);
-    const fg_points = extractMaskPoints(result.mask, isForeground);
+    fg_points = extractMaskPoints(result.mask, isForeground);
     const copy = result.mask.clone();
-    updateMask(copy, fg_points, 255);
+    updateMatrix(copy, fg_points, [255])
     cv.imshow("extracted", copy);
     copy.delete();
 }

@@ -118,13 +118,18 @@ function extractMaskPoints(mask, pred) {
 }
 
 /*
-@brief Updates a mask at given points to be a certain value
-@param mask (cv.Mat | type cv.CV_8UC1)
+@brief Updates an OpenCV matrix at given points to be a certain value
+@param matrix (cv.Mat)
 @param points (Array)
-@param value (number)
+@param value (Array)
 */
-function updateMask(mask, points, value) {
-    points.map(point => {
-        mask.ucharPtr(point[0], point[1])[0] = value;
-    });
+function updateMatrix(matrix, points, value) {
+    const nChannels = value.length;
+    points.map(
+        point => {
+            for (let channel = 0; channel < nChannels; channel++) {
+                matrix.ucharPtr(point[0], point[1])[channel] = value[channel];
+            }
+        }
+    );
 }

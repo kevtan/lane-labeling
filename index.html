@@ -16,25 +16,75 @@
 <body>
     <h1>Prototype</h1>
     <input type="file" id="file_input">
-    <button id="rect" onclick="changeButton('rect')">Rectangle</button>
-    <button id="green" onclick="changeButton('green')">Green Line</button>
-    <button id="red" onclick="changeButton('red')">Red Line</button>
-    <button id="brush width">Brush Width</button>
-    <div>
-        <h2>Input</h2>
-        <canvas id="input"></canvas>
+    <div id="mode">
+        <!--What kind of input you'd like to give.-->
+        <strong>Mode:</strong>
+        <button id="rect" onclick="changeButton('rect')">Rectangle</button>
+        <button id="green" onclick="changeButton('green')">Green Line</button>
+        <button id="red" onclick="changeButton('red')">Red Line</button>
     </div>
-    <div>
-        <h2>Extracted</h2>
-        <canvas id="extracted"></canvas>
+    <div id="preferences">
+        <strong>Preferences:</strong>
+        <!--Parameters that finetune your input.-->
+        <button id="brush width">Brush Width</button>
+    </div>
+    <div id="type">
+        <!--What type of lane you are labeling.-->
+        <strong>Type:</strong>
+        <button id="dashed" onclick="changeLaneType('dashed')">Dashed</button>
+        <button id="solid" onclick="changeLaneType('solid')">Solid</button>
+        <button id="shoulder" onclick="changeLaneType('shoulder')">Shoulder</button>
+        <label for="nLane">Lane Number</label>
+        <input type="number" id="nLane">
+        <script>
+            const changeLaneType = typename => laneType = typename;
+            const number = document.getElementById('nLane');
+            number.oninput = event => nInstance = parseInt(event.target.value);
+        </script>
+    </div>
+    <div id="visuals">
+        <div>
+            <h2>Input</h2>
+            <canvas id="input"></canvas>
+        </div>
+        <div>
+            <h2>Extracted</h2>
+            <canvas id="extracted"></canvas>
+            <br>
+            <button id="satisfied" onclick="satisfied()">Satisfied</button>
+            <script>
+                /* Commits your current extraction results to instance and segmentation images. */
+                function satisfied () {
+                    const segmentation_value = laneType == 'dashed' ? 100 : laneType == 'solid' ? 170 : 255;
+                    updateMatrix(segmentation, fg_points, [segmentation_value]);
+                    const instance_value = nInstance * 30;
+                    updateMatrix(instance, fg_points, [instance_value]);
+                    cv.imshow("instance", instance);
+                    cv.imshow("segmentation", segmentation);
+                }
+            </script>
+        </div>
+        <div>
+            <h2>Segmentation</h2>
+            <canvas id="segmentation"></canvas>
+        </div>
+        <div>
+            <h2>Instance</h2>
+            <canvas id="instance"></canvas>
+        </div>
     </div>
     <script>
         // create fabric wrappers around canvases
         const input = new fabric.Canvas('input');
         // global state variables
-        let cv_image; // cv.Mat image cache
-        let result; // result of grabcut operations
-        let extracted; // individual extraction result
+        let nInstance;      // (number) tracks the current instance number
+        let laneType;       // (string) tracks the current lane type
+        let cv_image;       // cv.Mat image cache
+        let result;         // result of grabcut operations
+        let extracted;      // individual extraction result
+        let fg_points;      // stores extraction results (array of points)
+        let segmentation;   // stores overall segmentation result
+        let instance;       // stores overall instance result
         // file upload logic
         const file_input = document.getElementById('file_input');
         let image = document.createElement('img');
@@ -53,7 +103,11 @@
                         cv_image = cv.imread(image);
                         cv.cvtColor(cv_image, cv_image, cv.COLOR_RGBA2RGB);
                         extracted = new cv.Mat.zeros(image.height, image.width, cv.CV_8UC1);
+                        segmentation = extracted.clone();
+                        instance = extracted.clone();
                         cv.imshow("extracted", extracted);
+                        cv.imshow("segmentation", segmentation);
+                        cv.imshow("instance", instance);
                     }
                 );
             }
@@ -62,7 +116,6 @@
         function changeButton(value) {
             input._eventListeners = {} // TODO: Fix, hacky
             if (value == 'rect') {
-                console.log("Here!")
                 input.isDrawingMode = false;
                 input.on("mouse:down", startRect);
                 input.on("mouse:up", endRect);
@@ -77,7 +130,6 @@
                     const points = circleBrush._points;
                     // step 2: draw points onto mask
                     const pixel_value = new cv.Scalar(value == 'green' ? cv.GC_FGD : cv.GC_BGD);
-                    console.log(pixel_value);
                     for (let i = 0; i < points.length - 1; i++) {
                         const start = points[i];
                         const end = points[i + 1];
@@ -91,8 +143,8 @@
                         result.fgdModel
                     );
                     // step 4: render the results
-                    const fg_points = extractMaskPoints(result.mask, isForeground);
-                    updateMask(result.mask, fg_points, 255);
+                    fg_points = extractMaskPoints(result.mask, isForeground);
+                    updateMatrix(result.mask, fg_points, [255]);
                     cv.imshow("extracted", result.mask);
                 });
             }
