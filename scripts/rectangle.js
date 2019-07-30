@@ -10,7 +10,6 @@ let rectangle = new fabric.Rect(rect_params);
 
 // start the rectangle
 function startRect(mouse_event) {
-    console.log("Bananas")
     const location = mouse_event.pointer;
     rectangle.left = Math.round(location.x);
     rectangle.top = Math.round(location.y);
@@ -22,7 +21,6 @@ function endRect(mouse_event) {
     rectangle.width = Math.round(location.x - rectangle.left);
     rectangle.height = Math.round(location.y - rectangle.top);
     // add rectangle to the fabric canvas
-    console.log(rectangle)
     input.add(rectangle);
     // perform rectangular grabcut
     const rect = new cv.Rect({
@@ -32,9 +30,9 @@ function endRect(mouse_event) {
         height: rectangle.height
     });
     result = rectGrabCut(cv_image, rect);
-    const fg_points = extractMaskPoints(result.mask, isForeground);
+    fg_points = extractMaskPoints(result.mask, isForeground);
     const copy = result.mask.clone();
-    updateMask(copy, fg_points, 255);
+    updateMatrix(copy, fg_points, [255])
     cv.imshow("extracted", copy);
     copy.delete();
 }

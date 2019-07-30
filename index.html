@@ -50,6 +50,19 @@
         <div>
             <h2>Extracted</h2>
             <canvas id="extracted"></canvas>
+            <br>
+            <button id="satisfied" onclick="satisfied()">Satisfied</button>
+            <script>
+                /* Commits your current extraction results to instance and segmentation images. */
+                function satisfied () {
+                    const segmentation_value = laneType == 'dashed' ? 100 : laneType == 'solid' ? 170 : 255;
+                    updateMatrix(segmentation, fg_points, [segmentation_value]);
+                    const instance_value = nInstance * 30;
+                    updateMatrix(instance, fg_points, [instance_value]);
+                    cv.imshow("instance", instance);
+                    cv.imshow("segmentation", segmentation);
+                }
+            </script>
         </div>
         <div>
             <h2>Segmentation</h2>
@@ -69,6 +82,7 @@
         let cv_image;       // cv.Mat image cache
         let result;         // result of grabcut operations
         let extracted;      // individual extraction result
+        let fg_points;      // stores extraction results (array of points)
         let segmentation;   // stores overall segmentation result
         let instance;       // stores overall instance result
         // file upload logic
@@ -102,7 +116,6 @@
         function changeButton(value) {
             input.__eventListeners = {} // TODO: Fix, hacky
             if (value == 'rect') {
-                console.log("Here!")
                 input.isDrawingMode = false;
                 input.on("mouse:down", startRect);
                 input.on("mouse:up", endRect);
@@ -117,7 +130,6 @@
                     const points = circleBrush._points;
                     // step 2: draw points onto mask
                     const pixel_value = new cv.Scalar(value == 'green' ? cv.GC_FGD : cv.GC_BGD);
-                    console.log(pixel_value);
                     for (let i = 0; i < points.length - 1; i++) {
                         const start = points[i];
                         const end = points[i + 1];
@@ -131,8 +143,8 @@
                         result.fgdModel
                     );
                     // step 4: render the results
-                    const fg_points = extractMaskPoints(result.mask, isForeground);
-                    updateMask(result.mask, fg_points, 255);
+                    fg_points = extractMaskPoints(result.mask, isForeground);
+                    updateMatrix(result.mask, fg_points, [255]);
                     cv.imshow("extracted", result.mask);
                 });
             }
