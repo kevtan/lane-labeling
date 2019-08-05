@@ -8,7 +8,6 @@ file_input.onchange = (e) => {
         resizeCanvases(temp);
         addImageToCanvas(temp);
         createMasks(temp);
-        console.log(cv.imread("input").size());
     }
 };
 
