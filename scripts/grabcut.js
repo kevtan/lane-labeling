@@ -71,6 +71,19 @@ function rectGrabCut(img, rect, iters = 2, padding = 50) {
 }
 
 /*
+@brief Extract a foreground object given an enclosing polygonal boundary.
+@param img (cv.Mat | type cv.CV_8UC3)
+@param polygon (Array)
+@iters (number)
+*/
+function polygonGrabCut(img, polygon, iters = 2) {
+    const { width, height } = img.size();
+    // note that cv.GC_BGD == 0
+    const mask = new cv.Mat.zeros(height, width, cv.CV_8UC1);
+
+}
+
+/*
 @brief Extract a foreground object given an annotated mask.
 @param img (cv.Mat | type cv.CV_8UC3)
 @param mask (cv.Mat | type cv.CV_8UC1)

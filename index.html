@@ -1,160 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="node_modules/opencv.js/opencv.js"></script>
     <script src="node_modules/fabric/dist/fabric.js"></script>
     <script src="scripts/grabcut.js"></script>
     <script src="scripts/rectangle.js"></script>
-    <script src="scripts/lines.js"></script>
+    <script src="scripts/imageInteractivity.js"></script>
+    <link rel="stylesheet" href="styles.css">
     <title>Prototype</title>
-    <style>
-        #visuals div {
-            display: inline-block;
-        }
-    </style>
 </head>
 
 <body>
     <h1>Prototype</h1>
     <input type="file" id="file_input">
-    <div id="mode">
-        <!--What kind of input you'd like to give.-->
+    <script src="scripts/fileUpload.js"></script>
+    <div>
         <strong>Mode:</strong>
-        <button id="rect" onclick="changeButton('rect')">Rectangle</button>
-        <button id="green" onclick="changeButton('green')">Green Line</button>
-        <button id="red" onclick="changeButton('red')">Red Line</button>
+        <button onclick="changeButton('rect')">Rectangle</button>
+        <button onclick="changeButton('green')">Green Line</button>
+        <button onclick="changeButton('red')">Red Line</button>
+        <button onclick="changeButton('pan')">Pan</button>
     </div>
-    <div id="preferences">
+    <!-- <div id="preferences">
         <strong>Preferences:</strong>
-        <!--Parameters that finetune your input.-->
         <button id="brush width">Brush Width</button>
-    </div>
-    <div id="type">
-        <!--What type of lane you are labeling.-->
+    </div> -->
+    <div>
         <strong>Type:</strong>
-        <button id="dashed" onclick="changeLaneType('dashed')">Dashed</button>
-        <button id="solid" onclick="changeLaneType('solid')">Solid</button>
-        <button id="shoulder" onclick="changeLaneType('shoulder')">Shoulder</button>
+        <button onclick="changeLaneType('d')">Dashed</button>
+        <button onclick="changeLaneType('s')">Solid</button>
+        <button onclick="changeLaneType('r')">Shoulder</button>
         <label for="nLane">Lane Number</label>
         <input type="number" id="nLane">
         <script>
-            const changeLaneType = typename => laneType = typename;
+            const changeLaneType = typename => state.lane_specs.lane_type = typename;
             const number = document.getElementById('nLane');
-            number.oninput = event => nInstance = parseInt(event.target.value);
+            number.oninput = event => state.lane_specs.lane_number = parseInt(event.target.value);
         </script>
     </div>
+    <div>
+        <strong>Color:</strong>
+        <button onclick="changeLaneColor('w')">White</button>
+        <button onclick="changeLaneColor('y')">Yellow</button>
+        <script>
+            const changeLaneColor = color => state.lane_specs.lane_color = color;
+        </script>
+    </div>
+    <button onclick="toggleImageInteractivity()">Image Interactivity On/Off</button>
     <button id="satisfied" onclick="satisfied()">Satisfied</button>
-    <script>
-        /* Commits your current extraction results to instance and segmentation images. */
-        function satisfied() {
-            const segmentation_value = laneType == 'dashed' ? 100 : laneType == 'solid' ? 170 : 255;
-            updateMatrix(segmentation, fg_points, [segmentation_value]);
-            const instance_value = nInstance * 30;
-            updateMatrix(instance, fg_points, [instance_value]);
-            cv.imshow("instance", instance);
-            cv.imshow("segmentation", segmentation);
-        }
-    </script>
+    <script src="scripts/satisfied.js"></script>
+    <script src="scripts/changeButton.js"></script>
     <div id="visuals">
         <div>
             <h2>Input</h2>
-            <canvas id="input"></canvas>
+            <canvas id="input" class="input"></canvas>
         </div>
         <div>
             <h2>Extracted</h2>
-            <canvas id="extracted"></canvas>
+            <canvas id="extracted" class="output"></canvas>
         </div>
         <div>
             <h2>Segmentation</h2>
-            <canvas id="segmentation"></canvas>
+            <canvas id="segmentation" class="output"></canvas>
         </div>
         <div>
             <h2>Instance</h2>
-            <canvas id="instance"></canvas>
+            <canvas id="instance" class="output"></canvas>
         </div>
     </div>
     <script>
-        // create fabric wrappers around canvases
-        const input = new fabric.Canvas('input');
-        // global state variables
-        let nInstance;      // (number) tracks the current instance number
-        let laneType;       // (string) tracks the current lane type
-        let cv_image;       // cv.Mat image cache RGB
-        let cv_image_alpha; // cv.Mat image cache RGBA
-        let result;         // result of grabcut operations
-        let extracted;      // individual extraction result
-        let fg_points;      // stores extraction results (array of points)
-        let segmentation;   // stores overall segmentation result
-        let instance;       // stores overall instance result
-        // file upload logic
-        const file_input = document.getElementById('file_input');
-        let image = document.createElement('img');
-        file_input.onchange = (e) => {
-            // clear canvas of any existing objects
-            input.clear();
-            // load the file
-            image.src = URL.createObjectURL(e.target.files[0]);
-            image.onload = _ => {
-                input.setDimensions({ width: image.width, height: image.height });
-                const fabric_image = new fabric.Image(image);
-                input.setBackgroundImage(
-                    fabric_image,
-                    _ => {
-                        input.renderAll();
-                        cv_image_alpha = cv.imread(image);
-                        cv_image = new cv.Mat();
-                        cv.cvtColor(cv_image_alpha, cv_image, cv.COLOR_RGBA2RGB);
-                        extracted = new cv.Mat.zeros(image.height, image.width, cv.CV_8UC1);
-                        segmentation = extracted.clone();
-                        instance = extracted.clone();
-                        cv.imshow("extracted", extracted);
-                        cv.imshow("segmentation", segmentation);
-                        cv.imshow("instance", instance);
-                    }
-                );
+        const state = {
+            input_canvas: new fabric.Canvas('input'),
+            image_object: null,
+            lane_specs: {
+                lane_number: 1,
+                lane_type: null,
+                lane_color: null
+            },
+            extracted_real: null,
+            extracted_plot: null,
+            segmentation_real: null,
+            segmentation_plot: null,
+            instance: null,
+            rect_cancelled: false,
+            rectangles: [],
+            gc_result: {
+                mask: null,
+                fgd_model: null,
+                bgd_model: null,
+                fg_points: []
             }
-        }
-        //show button value
-        function changeButton(value) {
-            input.__eventListeners = {} // TODO: Fix, hacky
-            if (value == 'rect') {
-                input.isDrawingMode = false;
-                input.on("mouse:down", startRect);
-                input.on("mouse:up", endRect);
-            } else {
-                input.isDrawingMode = true;
-                const circleBrush = new fabric.PencilBrush(input);
-                circleBrush.width = 3;
-                circleBrush.color = value;
-                input.freeDrawingBrush = circleBrush;
-                input.on("mouse:up", _ => {
-                    // step 1: extract out points
-                    const points = circleBrush._points;
-                    // step 2: draw points onto mask
-                    const pixel_value = new cv.Scalar(value == 'green' ? cv.GC_FGD : cv.GC_BGD);
-                    for (let i = 0; i < points.length - 1; i++) {
-                        const start = points[i];
-                        const end = points[i + 1];
-                        cv.line(result.mask, start, end, pixel_value);
-                    }
-                    // step 3: invoke mask grabcut
-                    result = maskGrabCut(
-                        cv_image,
-                        result.mask,
-                        result.bgdModel,
-                        result.fgdModel
-                    );
-                    // step 4: render the results
-                    fg_points = extractMaskPoints(result.mask, isForeground);
-                    updateMatrix(result.mask, fg_points, [255]);
-                    cv.imshow("extracted", result.mask);
-                });
-            }
-        }
+        };
     </script>
 </body>
 
