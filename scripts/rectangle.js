@@ -35,7 +35,12 @@ function endRect(mouse_event) {
         height: rectangle.height
     });
     state.rectangles.push(rectangle);
+    // read in image and resize to desired dimensions
     const image_matrix = readImage('input');
+    const width = state.input_canvas.width;
+    const height = state.input_canvas.height;
+    const desired_size = new cv.Size(width, height);
+    cv.resize(image_matrix, image_matrix, desired_size, cv.INTER_NEAREST);
     state.gc_result = rectGrabCut(image_matrix, rect);
     state.gc_result.fg_points = extractMaskPoints(state.gc_result.mask, isForeground);
     // display results on extracted canvas
