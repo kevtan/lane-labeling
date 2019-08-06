@@ -20,10 +20,11 @@ const ins_plotvals = [
 ];
 
 /*
-@brief Gets number representing what kind of lane you're labeling
+@brief Returns an integer representing the lane you're labeling,
+    taking into account both lane type (s|d|r) and color (w|y).
 @return number
 */
-function laneEncoding() {
+function getLaneInteger() {
     const { lane_type, lane_color } = state.lane_specs;
     if (lane_type == 'r') return 1;
     else if (lane_type == 'd') return lane_color == 'w' ? 2 : 3;
@@ -31,13 +32,24 @@ function laneEncoding() {
     else throw new Error('Cannot compute lane encoding!');
 }
 
+/*
+@brief Event handler for when the user clicks the 'Satisfied' button;
+    commits extraction results to the segmentation and instance masks.
+*/
 function satisfied() {
     // check to make sure user specified all settings
     const specs = state.lane_specs;
     if (specs.lane_number == null || specs.lane_type == null || specs.lane_color == null)
         alert("Please specify lane number, type, and color before committing changes!");
-    const fg_points = transformBack();
-    const lane_encoding = laneEncoding();
+    // transform grabcut mask back and extract foreground
+    const transformation_matrix = getTransformationMatrix();
+    const transformed_mask = transformMask(transformation_matrix);
+    const fg_points = extractMaskPoints(transformed_mask, isForeground);
+    // cleanup results
+    transformation_matrix.delete();
+    transformed_mask.delete();
+    // render results on canvases and in state masks
+    const lane_encoding = getLaneInteger();
     updateMatrix(state.segmentation_real, fg_points, [lane_encoding]);
     updateMatrix(state.segmentation_plot, fg_points, seg_plotvals[lane_encoding]);
     updateMatrix(state.instance_real, fg_points, [specs.lane_number]);
@@ -51,32 +63,53 @@ function satisfied() {
 @return (Array of Foreground Points)
 */
 function transformBack() {
-    const { tl, bl, tr } = state.image_object.aCoords;
-    const src_triangle = new cv.matFromArray(3, 1, cv.CV_32FC2, [
-        tl.x, tl.y,
-        bl.x, bl.y,
-        tr.x, tr.y
-    ]);
-    const dst_triangle = new cv.matFromArray(3, 1, cv.CV_32FC2, [
-        0, 0,
-        0, state.image_object.height, // height doesn't change; scaleY does
-        state.image_object.width, 0 // width doesn't change; scaleX does
-    ]);
-    const transformation_mat = cv.getAffineTransform(src_triangle, dst_triangle);
-    dst_triangle.delete();
-    src_triangle.delete();
-    const recovered_mask = new cv.Mat();
-    const recovered_mask_size = new cv.Size(state.image_object.width, state.image_object.height);
-    cv.warpAffine(
-        state.gc_result.mask,
-        recovered_mask,
-        transformation_mat,
-        recovered_mask_size,
-        cv.INTER_NEAREST
-    );
-    // extract out foreground points
     const fg_points = extractMaskPoints(recovered_mask, isForeground);
     transformation_mat.delete();
     recovered_mask.delete();
     return fg_points;
+}
+
+/*
+@brief Find the affine transformation matrix to get from the current
+    image position (potentially rotated/stretched) back to the original.
+@return (cv.Mat | type cv.CV_64FC1 | size 2x3)
+*/
+function getTransformationMatrix() {
+    const { tl, bl, tr } = state.image_object.aCoords;
+    const src_points = new cv.matFromArray(3, 1, cv.CV_32FC2, [
+        tl.x, tl.y,
+        bl.x, bl.y,
+        tr.x, tr.y
+    ]);
+    // note: scaling image changes scaleX and scaleY not width and height
+    const dst_points = new cv.matFromArray(3, 1, cv.CV_32FC2, [
+        0, 0,
+        0, state.image_object.height,
+        state.image_object.width, 0
+    ]);
+    const transformation_matrix = cv.getAffineTransform(src_points, dst_points);
+    dst_points.delete();
+    src_points.delete();
+    return transformation_matrix;
+}
+
+/*
+@brief Transforms state.gc_result.mask according to a transformation matrix.
+@return (cv.Mat | type cv.CV_8UC1)
+*/
+function transformMask(transformation_matrix) {
+    const transformed_mask = new cv.Mat();
+    // note: scaling image changes scaleX and scaleY not width and height
+    const transformed_mask_size = new cv.Size(
+        state.image_object.width,
+        state.image_object.height
+    );
+    cv.warpAffine(
+        state.gc_result.mask,
+        transformed_mask,
+        transformation_matrix,
+        transformed_mask_size,
+        cv.INTER_NEAREST
+    );
+    return transformed_mask;
 }

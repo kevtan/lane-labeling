@@ -70,7 +70,10 @@
     </div>
     <script>
         const state = {
-            input_canvas: new fabric.Canvas('input'),
+            input_canvas: new fabric.Canvas('input', {
+                defaultCursor: "crosshair",
+                hoverCursor: "crosshair"
+            }),
             image_object: null,
             lane_specs: {
                 lane_number: 1,
@@ -84,6 +87,10 @@
             instance: null,
             rect_cancelled: false,
             rectangles: [],
+            correction_lines: {
+                foreground: [],
+                background: []
+            },
             gc_result: {
                 mask: null,
                 fgd_model: null,
