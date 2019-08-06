@@ -35,15 +35,19 @@ function endRect(mouse_event) {
         height: rectangle.height
     });
     state.rectangles.push(rectangle);
+    showLastRectangle();
     const image_matrix = readImage('input');
     state.gc_result = rectGrabCut(image_matrix, rect);
     state.gc_result.fg_points = extractMaskPoints(state.gc_result.mask, isForeground);
+    // display results on original canvas
+    // state.image_copy = cv.imread("input");
+    // updateAlpha(state.image_copy, state.gc_result.fg_points, 128);
+    // cv.imshow("input", state.image_copy);
     // display results on extracted canvas
     const mask_copy = state.gc_result.mask.clone();
     updateMatrix(mask_copy, state.gc_result.fg_points, [255]);
     cv.imshow("extracted", mask_copy);
     mask_copy.delete();
-    showLastRectangle();
 }
 
 /*

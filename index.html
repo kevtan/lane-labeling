@@ -16,24 +16,25 @@
     <script src="scripts/fileUpload.js"></script>
     <div>
         <strong>Mode:</strong>
-        <button onclick="changeButton('rect')">Rectangle</button>
-        <button onclick="changeButton('green')">Green Line</button>
-        <button onclick="changeButton('red')">Red Line</button>
-        <button onclick="changeButton('pan')">Pan</button>
+        <button onclick="changeInputMode('rect')">Rectangle</button>
+        <button onclick="changeInputMode('green')">Green Line</button>
+        <button onclick="changeInputMode('red')">Red Line</button>
+        <button onclick="changeInputMode('pan')">Pan</button>
     </div>
-    <!-- <div id="preferences">
+    <div>
         <strong>Preferences:</strong>
-        <button id="brush width">Brush Width</button>
-    </div> -->
+        <br>
+        <input id="brushWidth" type="number">Brush Width</input>
+        <script src="scripts/brushPreferences.js"></script>
+    </div>
     <div>
         <strong>Type:</strong>
         <button onclick="changeLaneType('d')">Dashed</button>
         <button onclick="changeLaneType('s')">Solid</button>
         <button onclick="changeLaneType('r')">Shoulder</button>
-        <label for="nLane">Lane Number</label>
-        <input type="number" id="nLane">
+        <script src="scripts/changeLaneType.js"></script>
+        <input type="number" id="nLane">Lane Number</input>
         <script>
-            const changeLaneType = typename => state.lane_specs.lane_type = typename;
             const number = document.getElementById('nLane');
             number.oninput = event => state.lane_specs.lane_number = parseInt(event.target.value);
         </script>
@@ -49,7 +50,7 @@
     <button onclick="toggleImageInteractivity()">Image Interactivity On/Off</button>
     <button id="satisfied" onclick="satisfied()">Satisfied</button>
     <script src="scripts/satisfied.js"></script>
-    <script src="scripts/changeButton.js"></script>
+    <script src="scripts/changeInputMode.js"></script>
     <div id="visuals">
         <div>
             <h2>Input</h2>
@@ -72,7 +73,8 @@
         const state = {
             input_canvas: new fabric.Canvas('input', {
                 defaultCursor: "crosshair",
-                hoverCursor: "crosshair"
+                hoverCursor: "crosshair",
+                freeDrawingBrush: new fabric.PencilBrush(this)
             }),
             image_object: null,
             lane_specs: {
@@ -87,14 +89,14 @@
             instance: null,
             rect_cancelled: false,
             rectangles: [],
-            correction_lines: {
+            adjustment_lines: {
                 foreground: [],
                 background: []
             },
             gc_result: {
                 mask: null,
-                fgd_model: null,
-                bgd_model: null,
+                bgdModel: null,
+                fgdModel: null,
                 fg_points: []
             }
         };

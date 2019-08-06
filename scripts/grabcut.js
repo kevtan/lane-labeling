@@ -94,13 +94,13 @@ function polygonGrabCut(img, polygon, iters = 2) {
       bgdModel: (cv.Mat | type cv.CV_64FC1)
       fgdModel: (cv.Mat | type cv.CV_64FC1)
 */
-function maskGrabCut(img, mask, bgdModel, fgdModel, iters = 1) {
+function maskGrabCut(img, mask, bgdModel, fgdModel, iters = 2) {
     if (bgdModel == null && fgdModel == null) {
         // create empty GMMs if left unspecified
-        bgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1)
-        fgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1)
+        bgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1);
+        fgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1);
     }
-    cv.grabCut(img, mask, new cv.Rect(), bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK)
+    cv.grabCut(img, mask, new cv.Rect(), bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK);
     return { "mask": mask, "bgdModel": bgdModel, "fgdModel": fgdModel }
 }
 
