@@ -7,7 +7,7 @@ function changeLaneType(type) {
         state.input_canvas.on('mouse:down', addRoadShoulderPoint);
         window.onkeydown = endRoadShoulder;
     } else {
-        state.lane_specs.lane_type = typename;
+        state.lane_specs.lane_type = type;
     }
 }
 

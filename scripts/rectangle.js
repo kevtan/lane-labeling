@@ -4,54 +4,19 @@ const rect_params = {
     fill: 'rgba(0, 0, 0, 0)'
 }
 
-function hideLastRectangle() {
-    const rect_num = state.rectangles.length;
-    state.input_canvas.remove(state.rectangles[rect_num - 1]);
-}
-
-function showLastRectangle() {
-    const rect_num = state.rectangles.length;
-    state.input_canvas.add(state.rectangles[rect_num - 1]);
-}
-
 function startRect(mouse_event) {
     state.rect_cancelled = false;
-    hideLastRectangle();
-    rectangle = new fabric.Rect(rect_params);
+    // TODO: how to completely get rid of rectangle from memory?
+    if (state.last_rectangle) state.input_canvas.remove(state.last_rectangle);
+    state.last_rectangle = new fabric.Rect(rect_params);
     const location = mouse_event.pointer;
-    rectangle.left = Math.round(location.x);
-    rectangle.top = Math.round(location.y);
-    state.rectangles.push(rectangle);
+    state.last_rectangle.left = Math.round(location.x);
+    state.last_rectangle.top = Math.round(location.y);
 }
 
 function endRect(mouse_event) {
     if (state.rect_cancelled || !finishRectangle(mouse_event)) return;
-    // perform rectangular grabcut
-    const rectangle = state.rectangles.pop();
-    const rect = new cv.Rect({
-        x: rectangle.left,
-        y: rectangle.top,
-        width: rectangle.width,
-        height: rectangle.height
-    });
-    state.rectangles.push(rectangle);
-    showLastRectangle();
-    const image_matrix = readImage('input');
-    const width = state.input_canvas.width;
-    const height = state.input_canvas.height;
-    const desired_size = new cv.Size(width, height);
-    cv.resize(image_matrix, image_matrix, desired_size, cv.INTER_NEAREST);
-    state.gc_result = rectGrabCut(image_matrix, rect);
-    state.gc_result.fg_points = extractMaskPoints(state.gc_result.mask, isForeground);
-    // display results on original canvas
-    // state.image_copy = cv.imread("input");
-    // updateAlpha(state.image_copy, state.gc_result.fg_points, 128);
-    // cv.imshow("input", state.image_copy);
-    // display results on extracted canvas
-    const mask_copy = state.gc_result.mask.clone();
-    updateMatrix(mask_copy, state.gc_result.fg_points, [255]);
-    cv.imshow("extracted", mask_copy);
-    mask_copy.delete();
+    state.input_canvas.add(state.last_rectangle);
 }
 
 /*
@@ -60,28 +25,19 @@ function endRect(mouse_event) {
 @return success (bool)
 */
 function finishRectangle(mouse_event) {
-    const rectangle = state.rectangles.pop();
     const location = mouse_event.pointer;
-    let width = Math.round(location.x) - rectangle.left;
-    let height = Math.round(location.y) - rectangle.top;
+    let width = Math.round(location.x) - state.last_rectangle.left;
+    let height = Math.round(location.y) - state.last_rectangle.top;
     if (width == 0 || height == 0) return false;
     if (width < 0) {
-        rectangle.left = rectangle.left + width;
+        state.last_rectangle.left = state.last_rectangle.left + width;
         width = -width;
     }
     if (height < 0) {
-        rectangle.top = rectangle.top + height;
+        state.last_rectangle.top = state.last_rectangle.top + height;
         height = -height;
     }
-    rectangle.width = width;
-    rectangle.height = height;
-    state.rectangles.push(rectangle);
+    state.last_rectangle.width = width;
+    state.last_rectangle.height = height;
     return true;
-}
-
-/*
-@brief Cancels current rectangle if user presses 'q'
-*/
-function rectKeyPressHandler(key_event) {
-    state.rect_cancelled = key_event.key == 'q';
 }

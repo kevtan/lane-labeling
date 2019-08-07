@@ -40,7 +40,7 @@ function extractRectFromImage(img, rect) {
       bgdModel: (cv.Mat | type cv.CV_64FC1)
       fgdModel: (cv.Mat | type cv.CV_64FC1)
 */
-function rectGrabCut(img, rect, iters = 2, padding = 50) {
+function rectGrabCut(img, rect, iters = 3, padding = 25) {
     const rect_expanded = new cv.Rect(
         rect.x - padding,
         rect.y - padding,
@@ -67,7 +67,85 @@ function rectGrabCut(img, rect, iters = 2, padding = 50) {
             overall_mask.ucharPtr(row + position.y, col + position.x)[0] = pixel[0];
         }
     }
-    return { "mask": overall_mask, "bgdModel": bgdModel, "fgdModel": fgdModel }
+    return {
+        mask: overall_mask,
+        bgdModel: bgdModel,
+        fgdModel: fgdModel
+    };
+}
+
+/*
+@brief Extract a foreground object in a rotated rectangle.
+@param img (cv.Mat | type cv.CV_8UC3)
+@param rrect (cv.RotatedRect)
+@param iters (number)
+
+Note: Modifies input image in place!
+
+Note: Our desired image transformation involves a translation, then rotation,
+then translation. The second two operations can be combined into a single
+affine transformation. The first makes up its own affine transformation.
+The purpose of affine1 is to move the box into the center of the image. The
+purpose of affine2 is to rotate the image about the center.
+*/
+function rrectGrabCut(img, rrect, iters = 2) {
+    // transform image so rectangle is centered and upright
+    const center = new cv.Point(img.cols / 2, img.rows / 2);
+    const affine1 = new cv.matFromArray(2, 3, cv.CV_64FC1, [
+        1, 0, center.x - rrect.center.x,
+        0, 1, center.y - rrect.center.y
+    ]);
+    cv.warpAffine(img, img, affine1, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
+    const affine2 = cv.getRotationMatrix2D(center, rrect.angle, 1);
+    cv.warpAffine(img, img, affine2, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
+    // transform rotated rectangle into regular one
+    const rect = new cv.Rect(
+        center.x - rrect.size.width / 2,
+        center.y - rrect.size.height / 2,
+        rrect.size.width,
+        rrect.size.height
+    );
+    // perform grabcut on the rectified image
+    const mask = new cv.Mat();
+    const bgdModel = new cv.Mat();
+    const fgdModel = new cv.Mat();
+    const result = rectGrabCut(img, rect);
+    // transform the mask back to original orientation
+    cv.warpAffine(result.mask, result.mask, affine2, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
+    cv.warpAffine(result.mask, result.mask, affine1, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
+    return result;
+}
+
+/*
+@brief Converts a fabric rectangle into an cv.RotatedRect
+@param frect (fabric.Rect)
+@return (cv.RotatedRect)
+*/
+function frect2crect(frect) {
+    const vertices = frect.aCoords;
+    const crect = new cv.RotatedRect();
+    crect.center.x = (vertices.tl.x + vertices.br.x) / 2;
+    crect.center.y = (vertices.tl.y + vertices.br.y) / 2;
+    crect.size.width = frect.width * frect.scaleX;
+    crect.size.height = frect.height * frect.scaleY;
+    crect.angle = frect.angle;
+    return crect;
+}
+
+/*
+@brief Draws a rotated rectangle onto a matrix
+@param matrix (cv.Mat)
+@param rrect (cv.RotatedRect)
+@param color (cv.Scalar)
+*/
+function drawRotatedRect(matrix, rrect, color, width = 1) {
+    const points = cv.rotatedRectPoints(rrect);
+    const first = points[0];
+    points.push(first);
+    for (let i = 0; i < points.length - 1; i++) {
+        const [start, end] = points.slice(i, i + 2);
+        cv.line(matrix, start, end, color, width);
+    }
 }
 
 /*

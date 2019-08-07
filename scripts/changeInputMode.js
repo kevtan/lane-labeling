@@ -31,7 +31,32 @@ function enableRectDrawing() {
     const canvas = state.input_canvas;
     canvas.on("mouse:down", startRect);
     canvas.on("mouse:up", endRect);
-    window.onkeypress = rectKeyPressHandler;
+    window.onkeypress = e => {
+        const key = e.key;
+        if (key == 'q') state.rect_cancelled = true;
+        else if (key == 'Enter') {
+            // remove relics before taking a snapshot
+            state.input_canvas.remove(state.last_rectangle);
+            state.input_canvas.renderAll();
+            const snapshot = readImage("input");
+            // resize snapchat due to cv image reading thing
+            const width = state.input_canvas.width;
+            const height = state.input_canvas.height;
+            const desired_size = new cv.Size(width, height);
+            cv.resize(snapshot, snapshot, desired_size);
+            // perform grabcut
+            const rrect = frect2crect(state.last_rectangle);
+            state.gc_result = rrectGrabCut(snapshot, rrect);
+            // TODO: simply have an "render results" function that extracts fg points of mask and then renders them on input and extracted
+            const mask_copy = state.gc_result.mask.clone();
+            state.gc_result.fg_points = extractMaskPoints(mask_copy, isForeground);
+            updateMatrix(mask_copy, state.gc_result.fg_points, [255]);
+            cv.imshow("extracted", mask_copy);
+            mask_copy.delete();
+            // replace relics
+            state.input_canvas.add(state.last_rectangle);
+        }
+    };
     // turn on auxiliary lines
     canvas.on("mouse:move", enableCursorLine);
 }
