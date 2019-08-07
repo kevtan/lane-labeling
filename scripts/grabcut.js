@@ -4,9 +4,9 @@
 @return (cv.Mat | type cv.CV_8UC3)
 */
 function readImage(img) {
-    const img_mat = cv.imread(img)
-    cv.cvtColor(img_mat, img_mat, cv.COLOR_RGBA2RGB)
-    return img_mat
+    const img_mat = cv.imread(img);
+    cv.cvtColor(img_mat, img_mat, cv.COLOR_RGBA2RGB);
+    return img_mat;
 }
 
 /*
@@ -40,7 +40,7 @@ function extractRectFromImage(img, rect) {
       bgdModel: (cv.Mat | type cv.CV_64FC1)
       fgdModel: (cv.Mat | type cv.CV_64FC1)
 */
-function rectGrabCut(img, rect, iters = 3, padding = 25) {
+function rectGrabCut(img, rect, iters = 2, padding = 25) {
     const rect_expanded = new cv.Rect(
         rect.x - padding,
         rect.y - padding,
@@ -155,10 +155,11 @@ function drawRotatedRect(matrix, rrect, color, width = 1) {
 @iters (number)
 */
 function polygonGrabCut(img, polygon, iters = 2) {
-    const { width, height } = img.size();
-    // note that cv.GC_BGD == 0
-    const mask = new cv.Mat.zeros(height, width, cv.CV_8UC1);
-
+    const values = [];
+    polygon.map(pair => values.push(...pair));
+    const points = cv.matFromArray(polygon.length, 1, cv.CV_32SC2, values);
+    const rrect = cv.minAreaRect(points);
+    return rrectGrabCut(img, rrect);
 }
 
 /*
