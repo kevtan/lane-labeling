@@ -27,11 +27,20 @@ const state = {
 
 let uploads;
 let annotations;
+let cache;
 
 /*
 Every entry in state.annotations will look like this:
 {
     filename: /fake/path.png,
+    segmentation: cv.Mat,
+    instance: cv.Mat
+}
+
+Every entry in the cache will look like this:
+{
+    dataURL: blob://asdfasdf
+    image: cv.Mat,
     segmentation: cv.Mat,
     instance: cv.Mat
 }

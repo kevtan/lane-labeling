@@ -10,7 +10,7 @@ function readImage(img) {
 }
 
 /*
-@brief Takes a snapshot of the input canvas without any user input objects (rectangles, correction lines, polygon points, etc.)
+@brief Extracts
 @return (cv.Mat | type cv.CV_8UC3)
 */
 function takeSnapshot() {
@@ -139,7 +139,8 @@ function updateAlpha(matrix, points, alpha) {
 }
 
 /*
-@brief Takes into account the current state and performs a grabcut and updates extracted mask.
+@brief Given the current state of the canvas (background image, rectangle/polygon,
+    correction lines, etc.), compute the grabcut result and render it.
 */
 function computeGrabcut() {
     const snapshot = takeSnapshot();
@@ -147,6 +148,11 @@ function computeGrabcut() {
         // wait until polygon.js is done
     } else {
         const rrect = frect2crect(state.input.rectangle);
+        if (state.result) {
+            state.result.mask.delete();
+            state.result.fgdModel.delete();
+            state.result.bgdModel.delete();
+        }
         state.result = rrectGrabCut(snapshot, rrect);
     }
     snapshot.delete();

@@ -45,12 +45,12 @@ function satisfied() {
     const anno = annotations[state.image];
     updateMatrix(anno.segmentation, state.result.fg_points, [lane_encoding]);
     updateMatrix(anno.instance, state.result.fg_points, [state.lane.number]);
-    renderSegmentation();
-    renderInstance();
+    updateMatrix(cache[state.image].segmentation, state.result.fg_points, seg_plotvals[state.])
 }
 
 /*
 @brief Recomputes a colorful segmentation image and displays it.
+@note only used for validators to recover colorful image from 1 channel image
 */
 function renderSegmentation() {
     const anno = annotations[state.image];
@@ -71,6 +71,7 @@ function renderSegmentation() {
 
 /*
 @brief Recomputes a colorful instance image and displays it.
+@note only used for validators to recover colorful image from 1 channel image
 */
 function renderInstance() {
     const anno = annotations[state.image];
