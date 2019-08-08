@@ -17,12 +17,7 @@ const state = {
             bg: []
         }
     },
-    result: {
-        mask: null,
-        bgdModel: null,
-        fgdModel: null,
-        fg_points: []
-    }
+    result: null
 };
 
 let uploads;

@@ -30,10 +30,10 @@ function displayFile(nFile) {
                 segmentation: new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1),
                 instance: new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1)
             };
-            cache.segmentation = new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC3);
-            cache.instance = cache.segmentation.clone();
+            cache[state.image].segmentation = new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC3);
+            cache[state.image].instance = new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC3);
         }
-        cv.imshow("segmentation", cache.segmentation);
-        cv.imshow("instance", cache.instance);
+        cv.imshow("segmentation", cache[state.image].segmentation);
+        cv.imshow("instance", cache[state.image].instance);
     };
 }
