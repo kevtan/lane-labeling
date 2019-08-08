@@ -1,5 +1,5 @@
 /*
-@brief Read an <img> or <canvas> element as OpenCV matrix.
+@brief Read an <img> or <canvas> element as 3-channel OpenCV matrix.
 @param img (HTMLCanvasElement, canvas ID, HTMLImageElement, or image ID)
 @return (cv.Mat | type cv.CV_8UC3)
 */
@@ -10,24 +10,22 @@ function readImage(img) {
 }
 
 /*
-@brief Extract a rectangular ROI from an image
-@param img (cv.Mat | type cv.CV_8UC3)
+@brief Extract a rectangular ROI from an image.
+@param img (cv.Mat)
 @param rect (cv.Rect)
-@return (object with fields: position and roi)
-@note position: (cv.Rect)
-      roi: (cv.Mat | type cv.CV_8UC3)
+@return position (cv.Rect), data (cv.Mat)
 */
 function extractRectFromImage(img, rect) {
-    const { width, height } = img.size()
-    y_i = Math.max(0, rect.y)
-    y_f = Math.min(height, rect.y + rect.height)
-    x_i = Math.max(0, rect.x)
-    x_f = Math.min(width, rect.x + rect.width)
-    const expanded = new cv.Rect(x_i, y_i, x_f - x_i, y_f - y_i)
+    const { width, height } = img.size();
+    x_i = Math.max(0, rect.x);
+    x_f = Math.min(width, rect.x + rect.width);
+    y_i = Math.max(0, rect.y);
+    y_f = Math.min(height, rect.y + rect.height);
+    const valid_rect = new cv.Rect(x_i, y_i, x_f - x_i, y_f - y_i);
     return {
-        "position": expanded,
-        "roi": img.roi(expanded)
-    }
+        position: valid_rect,
+        data: img.roi(valid_rect)
+    };
 }
 
 /*
@@ -35,10 +33,10 @@ function extractRectFromImage(img, rect) {
 @param img (cv.Mat | type cv.CV_8UC3)
 @param rect (cv.Rect)
 @param iters (number)
-@return (object with fields: mask, bgdModel, and fgdModel)
-@note mask: (cv.Mat | type cv.CV_8UC1)
-      bgdModel: (cv.Mat | type cv.CV_64FC1)
-      fgdModel: (cv.Mat | type cv.CV_64FC1)
+@param padding (number)
+@return mask (cv.Mat | type cv.CV_8UC1), bgdModel (cv.Mat | type cv.CV_64FC1), fgdModel: (cv.Mat | type cv.CV_64FC1)
+
+TODO: Try a resizing (double the size) to see if effects are better for small images
 */
 function rectGrabCut(img, rect, iters = 2, padding = 25) {
     const rect_expanded = new cv.Rect(
@@ -46,27 +44,29 @@ function rectGrabCut(img, rect, iters = 2, padding = 25) {
         rect.y - padding,
         rect.width + 2 * padding,
         rect.height + 2 * padding
-    )
-    const { position, roi } = extractRectFromImage(img, rect_expanded)
-    const mask = new cv.Mat()
-    const bgdModel = new cv.Mat()
-    const fgdModel = new cv.Mat()
+    );
+    const { position, data } = extractRectFromImage(img, rect_expanded);
+    const mask = new cv.Mat();
+    const bgdModel = new cv.Mat();
+    const fgdModel = new cv.Mat();
     const rect_effective = new cv.Rect(
         rect.x - position.x,
         rect.y - position.y,
         rect.width,
         rect.height
-    )
-    cv.grabCut(roi, mask, rect_effective, bgdModel, fgdModel, iters, cv.GC_INIT_WITH_RECT)
+    );
+    cv.grabCut(data, mask, rect_effective, bgdModel, fgdModel, iters, cv.GC_INIT_WITH_RECT);
+    data.delete();
     const { width, height } = img.size();
     // note that cv.GC_BGD == 0
-    const overall_mask = new cv.Mat.zeros(height, width, cv.CV_8UC1)
+    const overall_mask = new cv.Mat.zeros(height, width, cv.CV_8UC1);
     for (let row = 0; row < position.height; row++) {
         for (let col = 0; col < position.width; col++) {
-            const pixel = mask.ucharPtr(row, col)
+            const pixel = mask.ucharPtr(row, col);
             overall_mask.ucharPtr(row + position.y, col + position.x)[0] = pixel[0];
         }
     }
+    mask.delete();
     return {
         mask: overall_mask,
         bgdModel: bgdModel,
@@ -79,8 +79,7 @@ function rectGrabCut(img, rect, iters = 2, padding = 25) {
 @param img (cv.Mat | type cv.CV_8UC3)
 @param rrect (cv.RotatedRect)
 @param iters (number)
-
-Note: Modifies input image in place!
+@return mask (cv.Mat | type cv.CV_8UC1), bgdModel (cv.Mat | type cv.CV_64FC1), fgdModel: (cv.Mat | type cv.CV_64FC1)
 
 Note: Our desired image transformation involves a translation, then rotation,
 then translation. The second two operations can be combined into a single
@@ -95,9 +94,10 @@ function rrectGrabCut(img, rrect, iters = 2) {
         1, 0, center.x - rrect.center.x,
         0, 1, center.y - rrect.center.y
     ]);
-    cv.warpAffine(img, img, affine1, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
+    const rectified = new cv.Mat();
+    cv.warpAffine(img, rectified, affine1, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
     const affine2 = cv.getRotationMatrix2D(center, rrect.angle, 1);
-    cv.warpAffine(img, img, affine2, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
+    cv.warpAffine(rectified, rectified, affine2, rectified.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
     // transform rotated rectangle into regular one
     const rect = new cv.Rect(
         center.x - rrect.size.width / 2,
@@ -106,46 +106,14 @@ function rrectGrabCut(img, rrect, iters = 2) {
         rrect.size.height
     );
     // perform grabcut on the rectified image
-    const mask = new cv.Mat();
-    const bgdModel = new cv.Mat();
-    const fgdModel = new cv.Mat();
-    const result = rectGrabCut(img, rect);
+    const result = rectGrabCut(rectified, rect);
+    rectified.delete();
     // transform the mask back to original orientation
     cv.warpAffine(result.mask, result.mask, affine2, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     cv.warpAffine(result.mask, result.mask, affine1, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
+    affine1.delete();
+    affine2.delete();
     return result;
-}
-
-/*
-@brief Converts a fabric rectangle into an cv.RotatedRect
-@param frect (fabric.Rect)
-@return (cv.RotatedRect)
-*/
-function frect2crect(frect) {
-    const vertices = frect.aCoords;
-    const crect = new cv.RotatedRect();
-    crect.center.x = (vertices.tl.x + vertices.br.x) / 2;
-    crect.center.y = (vertices.tl.y + vertices.br.y) / 2;
-    crect.size.width = frect.width * frect.scaleX;
-    crect.size.height = frect.height * frect.scaleY;
-    crect.angle = frect.angle;
-    return crect;
-}
-
-/*
-@brief Draws a rotated rectangle onto a matrix
-@param matrix (cv.Mat)
-@param rrect (cv.RotatedRect)
-@param color (cv.Scalar)
-*/
-function drawRotatedRect(matrix, rrect, color, width = 1) {
-    const points = cv.rotatedRectPoints(rrect);
-    const first = points[0];
-    points.push(first);
-    for (let i = 0; i < points.length - 1; i++) {
-        const [start, end] = points.slice(i, i + 2);
-        cv.line(matrix, start, end, color, width);
-    }
 }
 
 /*
