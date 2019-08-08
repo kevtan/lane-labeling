@@ -1,11 +1,55 @@
+window.onkeypress = e => {
+    if (e.key == "Enter") computeGrabcut();
+};
+
 function changeInputMode(value) {
-    state.input_canvas.__eventListeners = {} // TODO: Fix, hacky
-    window.onkeypress = null;
-    state.input_canvas.isDrawingMode = false;
+    input_canvas.__eventListeners = {} // TODO: Fix, hacky
+    input_canvas.isDrawingMode = false;
     if (value == 'pan') return;
     else if (value == 'poly') enablePolyDrawing();
-    else if (value == 'rect') enableRectDrawing();
-    else enableLineDrawing(value);
+    else if (value == 'rect') {
+        input_canvas.on("mouse:down", startRect);
+        input_canvas.on("mouse:up", endRect);
+    } else enableLineDrawing(value);
+}
+
+/*
+@brief Starts creating a rectangle to render on the input canvas.
+@param (MouseEvent)
+*/
+function startRect(mouse_event) {
+    let input = state.input;
+    if (input.rectangle) input_canvas.remove(input.rectangle);
+    input.rectangle = new fabric.Rect({
+        stroke: 'blue',
+        fill: 'rgba(0, 0, 0, 0)'
+    });
+    const location = mouse_event.pointer;
+    input.rectangle.left = Math.round(location.x);
+    input.rectangle.top = Math.round(location.y);
+}
+
+/*
+@brief Ends creating a rectangle to render on the input canvas.
+@param (MouseEvent)
+*/
+function endRect(mouse_event) {
+    const rect = state.input.rectangle;
+    const location = mouse_event.pointer;
+    let width = Math.round(location.x) - rect.left;
+    let height = Math.round(location.y) - rect.top;
+    if (width == 0 || height == 0) return;
+    if (width < 0) {
+        rect.left = rect.left + width;
+        width = -width;
+    }
+    if (height < 0) {
+        rect.top = rect.top + height;
+        height = -height;
+    }
+    rect.width = width;
+    rect.height = height;
+    input_canvas.add(rect);
 }
 
 // const PolygonPoint = (thisArg, left, top) => {
@@ -33,7 +77,7 @@ function changeInputMode(value) {
 // }
 
 function enablePolyDrawing() {
-    state.input_canvas.on("mouse:down", e => {
+    input_canvas.on("mouse:down", e => {
         const location = e.pointer;
         const RADIUS = 2;
         state.user_input.polygon.push(new fabric.Circle({
@@ -43,7 +87,7 @@ function enablePolyDrawing() {
             fill: 'red',
             hasControls: false
         }));
-        state.input_canvas.add(...state.user_input.polygon);
+        input_canvas.add(...state.user_input.polygon);
     });
     window.onkeypress = e => {
         if (e.key == 'Enter') {
@@ -57,13 +101,13 @@ function enablePolyDrawing() {
             cv.imshow("extracted", mask_copy);
             mask_copy.delete();
             // replace relics
-            state.input_canvas.add(...state.user_input.polygon);
+            input_canvas.add(...state.user_input.polygon);
         }
     }
 }
 
 function enableCursorLine(mouse_event) {
-    const canvas = state.input_canvas;
+    const canvas = input_canvas;
     canvas.remove(canvas.lineX);
     canvas.remove(canvas.lineY);
     const lineType = {
@@ -82,32 +126,7 @@ function enableCursorLine(mouse_event) {
     canvas.add(canvas.lineY);
 }
 
-function enableRectDrawing() {
-    const canvas = state.input_canvas;
-    canvas.on("mouse:down", startRect);
-    canvas.on("mouse:up", endRect);
-    window.onkeypress = e => {
-        const key = e.key;
-        if (key == 'q') state.rect_cancelled = true;
-        else if (key == 'Enter') {
-            const snapshot = takeSnapshot();
-            const rrect = frect2crect(state.last_rectangle);
-            state.gc_result = rrectGrabCut(snapshot, rrect);
-            snapshot.delete();
-            // TODO: simply have an "render results" function that extracts fg points of mask and then renders them on input and extracted
-            const mask_copy = state.gc_result.mask.clone();
-            state.gc_result.fg_points = extractMaskPoints(mask_copy, isForeground);
-            updateMatrix(mask_copy, state.gc_result.fg_points, [255]);
-            cv.imshow("extracted", mask_copy);
-            mask_copy.delete();
-        }
-    };
-    // turn on auxiliary lines
-    canvas.on("mouse:move", enableCursorLine);
-}
-
 function enableLineDrawing(color) {
-    const canvas = state.input_canvas;
     canvas.freeDrawingBrush.color = color;
     canvas.isDrawingMode = true;
     canvas.on("mouse:up", _ => {
@@ -118,19 +137,6 @@ function enableLineDrawing(color) {
         else lines.background.push(points);
         updateGrabcut();
     });
-}
-
-/*
-@brief Plots a series of line segments that make up a path onto a matrix.
-@param matrix (cv.Mat)
-@param points (Array)
-@param color (cv.Scalar)
-*/
-function plotPath(matrix, points, color, thickness) {
-    for (let i = 0; i < points.length - 1; i++) {
-        const [start, end] = points.slice(i, i + 2);
-        cv.line(matrix, start, end, color, thickness);
-    }
 }
 
 function updateGrabcut() {

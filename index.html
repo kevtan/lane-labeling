@@ -4,19 +4,21 @@
     <script src="node_modules/opencv.js/opencv.js"></script>
     <script src="node_modules/fabric/dist/fabric.js"></script>
     <script src="scripts/grabcut.js"></script>
-    <script src="scripts/rectangle.js"></script>
     <script src="scripts/utlis.js"></script>
-    <script src="scripts/imageInteractivity.js"></script>
     <link rel="stylesheet" href="styles.css">
     <title>Prototype</title>
 </head>
 
 <body>
     <h1>Prototype</h1>
-    <input type="file" id="file_input">
+    <input type="file" id="file_input" multiple>
     <script src="scripts/fileUpload.js"></script>
     <div>
-        <strong>Mode:</strong>
+        File
+        <input id="file_chooser" type="number" onchange="displayFile(this.value)">
+    </div>
+    <div>
+        Mode
         <button onclick="changeInputMode('poly')">Polygon</button>
         <button onclick="changeInputMode('rect')">Rectangle</button>
         <button onclick="changeInputMode('green')">Green Line</button>
@@ -24,93 +26,49 @@
         <button onclick="changeInputMode('pan')">Pan</button>
     </div>
     <div>
-        <strong>Preferences:</strong>
-        <br>
-        <input id="brushWidth" type="number">Brush Width</input>
-        <script src="scripts/brushPreferences.js"></script>
+        Brush Width
+        <input type="number" min="0" onchange="input_canvas.freeDrawingBrush.width = parseInt(this.value)">
     </div>
     <div>
-        <strong>Type:</strong>
-        <button onclick="changeLaneType('d')">Dashed</button>
-        <button onclick="changeLaneType('s')">Solid</button>
-        <button onclick="changeLaneType('r')">Shoulder</button>
-        <script src="scripts/changeLaneType.js"></script>
-        <input type="number" id="nLane">Lane Number</input>
+        Type
+        <button onclick="changeLaneType(this)">Dashed</button>
+        <button onclick="changeLaneType(this)">Solid</button>
+        <button onclick="changeLaneType(this)">Shoulder</button>
+        <input type="number" min="1" onchange="state.lane.number = parseInt(this.value)">Lane Number</input>
         <script>
-            const number = document.getElementById('nLane');
-            number.oninput = event => state.lane_specs.lane_number = parseInt(event.target.value);
+            const changeLaneType = button => state.lane.type = button.innerText == 'Dashed' ? 'd' : button.innerText == 'Solid' ? 's' : 'r';
         </script>
     </div>
     <div>
-        <strong>Color:</strong>
-        <button onclick="changeLaneColor('w')">White</button>
-        <button onclick="changeLaneColor('y')">Yellow</button>
+        Color
+        <button onclick="changeLaneColor(this)">White</button>
+        <button onclick="changeLaneColor(this)">Yellow</button>
         <script>
-            const changeLaneColor = color => state.lane_specs.lane_color = color;
+            const changeLaneColor = button => state.lane.color = button.innerText === 'White' ? 'w' : 'y';
         </script>
     </div>
-    <button onclick="toggleImageInteractivity()">Image Interactivity On/Off</button>
     <button id="satisfied" onclick="satisfied()">Satisfied</button>
     <script src="scripts/satisfied.js"></script>
     <script src="scripts/changeInputMode.js"></script>
-    <div id="visuals">
+    <div class="canvases">
         <div>
             <h2>Input</h2>
-            <canvas id="input" class="input"></canvas>
+            <canvas id="input"></canvas>
         </div>
         <div>
             <h2>Extracted</h2>
-            <canvas id="extracted" class="output"></canvas>
+            <canvas id="extracted"></canvas>
         </div>
         <div>
             <h2>Segmentation</h2>
-            <canvas id="segmentation" class="output"></canvas>
+            <canvas id="segmentation"></canvas>
         </div>
         <div>
             <h2>Instance</h2>
-            <canvas id="instance" class="output"></canvas>
+            <canvas id="instance"></canvas>
         </div>
     </div>
-    <script>
-        const state = {
-            input_canvas: new fabric.Canvas('input', {
-                defaultCursor: "crosshair",
-                hoverCursor: "crosshair",
-                freeDrawingBrush: new fabric.PencilBrush(this)
-            }),
-            image_object: null,
-            lane_specs: {
-                lane_number: 1,
-                lane_type: null,
-                lane_color: null
-            },
-            extracted_real: null,
-            extracted_plot: null,
-            segmentation_real: null,
-            segmentation_plot: null,
-            instance: null,
-            rect_cancelled: false,
-            last_rectangle: null,
-            adjustment_lines: {
-                foreground: [],
-                background: []
-            },
-            gc_result: {
-                mask: null,
-                bgdModel: null,
-                fgdModel: null,
-                fg_points: []
-            },
-            user_input: {
-                rectangle: null,
-                polygon: [],
-                corrections: {
-                    fg: [],
-                    bg: []
-                }
-            }
-        };
-    </script>
+    <script src="scripts/globals.js"></script>
 </body>
 
 </html>

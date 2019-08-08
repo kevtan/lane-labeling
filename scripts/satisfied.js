@@ -1,4 +1,5 @@
 const seg_plotvals = [
+    [0, 0, 0], // black
     [27, 161, 226], // cyan
     [244, 114, 208], // pink
     [250, 104, 0], // orange
@@ -7,6 +8,7 @@ const seg_plotvals = [
 ];
 
 const ins_plotvals = [
+    [0, 0, 0],
     [27, 161, 226], // cyan
     [244, 114, 208], // pink
     [250, 104, 0], // orange
@@ -25,10 +27,10 @@ const ins_plotvals = [
 @return number
 */
 function getLaneInteger() {
-    const { lane_type, lane_color } = state.lane_specs;
-    if (lane_type == 'r') return 1;
-    else if (lane_type == 'd') return lane_color == 'w' ? 2 : 3;
-    else if (lane_type == 's') return lane_color == 'w' ? 4 : 5;
+    const { type, color } = state.lane;
+    if (type == 'r') return 1;
+    else if (type == 'd') return color == 'w' ? 2 : 3;
+    else if (type == 's') return color == 'w' ? 4 : 5;
     else throw new Error('Cannot compute lane encoding!');
 }
 
@@ -37,79 +39,51 @@ function getLaneInteger() {
     commits extraction results to the segmentation and instance masks.
 */
 function satisfied() {
-    // check to make sure user specified all settings
-    const specs = state.lane_specs;
-    if (specs.lane_number == null || specs.lane_type == null || specs.lane_color == null)
+    if (state.lane.number == null || state.lane.type == null || state.lane.color == null)
         alert("Please specify lane number, type, and color before committing changes!");
-    // transform grabcut mask back and extract foreground
-    const transformation_matrix = getTransformationMatrix();
-    const transformed_mask = transformMask(transformation_matrix);
-    const fg_points = extractMaskPoints(transformed_mask, isForeground);
-    // cleanup results
-    transformation_matrix.delete();
-    transformed_mask.delete();
-    // render results on canvases and in state masks
     const lane_encoding = getLaneInteger();
-    updateMatrix(state.segmentation_real, fg_points, [lane_encoding]);
-    updateMatrix(state.segmentation_plot, fg_points, seg_plotvals[lane_encoding]);
-    updateMatrix(state.instance_real, fg_points, [specs.lane_number]);
-    updateMatrix(state.instance_plot, fg_points, ins_plotvals[specs.lane_number - 1])
-    cv.imshow("segmentation", state.segmentation_plot);
-    cv.imshow("instance", state.instance_plot);
+    const anno = annotations[state.image];
+    updateMatrix(anno.segmentation, state.result.fg_points, [lane_encoding]);
+    updateMatrix(anno.instance, state.result.fg_points, [state.lane.number]);
+    renderSegmentation();
+    renderInstance();
 }
 
 /*
-@brief Transforms grabcut mask result back into original frame of reference.
-@return (Array of Foreground Points)
+@brief Recomputes a colorful segmentation image and displays it.
 */
-function transformBack() {
-    const fg_points = extractMaskPoints(recovered_mask, isForeground);
-    transformation_mat.delete();
-    recovered_mask.delete();
-    return fg_points;
+function renderSegmentation() {
+    const anno = annotations[state.image];
+    console.log(state.image);
+    const seg = anno.segmentation;
+    const copy = new cv.Mat.zeros(seg.rows, seg.cols, cv.CV_8UC3);
+    for (let i = 0; i < seg.rows; i++) {
+        for (let j = 0; j < seg.cols; j++) {
+            const pixelVal = seg_plotvals[seg.ucharAt(i, j)];
+            copy.ucharPtr(i, j)[0] = pixelVal[0];
+            copy.ucharPtr(i, j)[1] = pixelVal[1];
+            copy.ucharPtr(i, j)[2] = pixelVal[2];
+        }
+    }
+    cv.imshow("segmentation", copy);
+    copy.delete();
 }
 
 /*
-@brief Find the affine transformation matrix to get from the current
-    image position (potentially rotated/stretched) back to the original.
-@return (cv.Mat | type cv.CV_64FC1 | size 2x3)
+@brief Recomputes a colorful instance image and displays it.
 */
-function getTransformationMatrix() {
-    const { tl, bl, tr } = state.image_object.aCoords;
-    const src_points = new cv.matFromArray(3, 1, cv.CV_32FC2, [
-        tl.x, tl.y,
-        bl.x, bl.y,
-        tr.x, tr.y
-    ]);
-    // note: scaling image changes scaleX and scaleY not width and height
-    const dst_points = new cv.matFromArray(3, 1, cv.CV_32FC2, [
-        0, 0,
-        0, state.image_object.height,
-        state.image_object.width, 0
-    ]);
-    const transformation_matrix = cv.getAffineTransform(src_points, dst_points);
-    dst_points.delete();
-    src_points.delete();
-    return transformation_matrix;
-}
-
-/*
-@brief Transforms state.gc_result.mask according to a transformation matrix.
-@return (cv.Mat | type cv.CV_8UC1)
-*/
-function transformMask(transformation_matrix) {
-    const transformed_mask = new cv.Mat();
-    // note: scaling image changes scaleX and scaleY not width and height
-    const transformed_mask_size = new cv.Size(
-        state.image_object.width,
-        state.image_object.height
-    );
-    cv.warpAffine(
-        state.gc_result.mask,
-        transformed_mask,
-        transformation_matrix,
-        transformed_mask_size,
-        cv.INTER_NEAREST
-    );
-    return transformed_mask;
+function renderInstance() {
+    const anno = annotations[state.image];
+    const ins = anno.instance;
+    const copy = new cv.Mat.zeros(ins.rows, ins.cols, cv.CV_8UC3);
+    for (let i = 0; i < ins.rows; i++) {
+        for (let j = 0; j < ins.cols; j++) {
+            const pixelVal = ins_plotvals[ins.ucharAt(i, j)];
+            copy.ucharPtr(i, j)[0] = pixelVal[0];
+            copy.ucharPtr(i, j)[1] = pixelVal[1];
+            copy.ucharPtr(i, j)[2] = pixelVal[2];
+        }
+    }
+    cv.imshow("instance", copy);
+    copy.delete();
 }

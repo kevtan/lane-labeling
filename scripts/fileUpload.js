@@ -1,52 +1,35 @@
 const file_input = document.getElementById('file_input');
-
 file_input.onchange = (e) => {
-    const temp = document.createElement('img');
-    temp.src = URL.createObjectURL(e.target.files[0]);
-    temp.onload = _ => {
-        URL.revokeObjectURL(temp.src);
-        resizeCanvases(temp);
-        addImageToCanvas(temp);
-        createMasks(temp);
-    }
+    uploads = e.target.files;
+    annotations = new Array(uploads.length);
+    const file_chooser = document.getElementById('file_chooser');
+    file_chooser.min = 0;
+    file_chooser.max = annotations.length - 1;
+    file_chooser.value = 0;
+    displayFile(0);
 };
 
 /*
-@brief Resizes all canvas elements according to input image.
-@param imgElement (HTMLImageElement)
+@brief Change all of the canvases to match the current file (image).
+@param nFile (number)
 */
-function resizeCanvases(imgElement) {
-    // resize input canvas (special because fabric wrapper)
-    state.input_canvas.setWidth(imgElement.width);
-    state.input_canvas.setHeight(imgElement.height);
-    // resize output canvases
-    const o_canvases = document.querySelectorAll('.output');
-    Array.prototype.map.call(o_canvases, o_canvas => {
-        o_canvas.width = imgElement.width;
-        o_canvas.height = imgElement.height;
-    });
-}
-
-/*
-@brief Adds an HTMLImageElement as fabric image object to input canvas.
-@param imgElement (HTMLImageElement)
-*/
-function addImageToCanvas(imgElement) {
-    state.image_object = new fabric.Image(imgElement, { selectable: false });
-    state.input_canvas.add(state.image_object);
-}
-
-/*
-@brief Creates the extracted, segmentation, and instance masks.
-@param imgElemetn (HTMLImageElement)
-*/
-function createMasks(imgElement) {
-    state.extracted = new cv.Mat.zeros(imgElement.height, imgElement.width, cv.CV_8UC1);
-    state.segmentation_real = state.extracted.clone();
-    state.instance_real = state.extracted.clone();
-    state.segmentation_plot = new cv.Mat.zeros(imgElement.height, imgElement.width, cv.CV_8UC3);
-    state.instance_plot = state.segmentation_plot.clone();
-    cv.imshow("extracted", state.extracted);
-    cv.imshow("segmentation", state.segmentation_plot);
-    cv.imshow("instance", state.instance_plot);
+function displayFile(nFile) {
+    state.image = nFile;
+    const temp = document.createElement('img');
+    temp.src = URL.createObjectURL(uploads[nFile]);
+    temp.onload = _ => {
+        input_canvas.setBackgroundImage(temp.src);
+        URL.revokeObjectURL(temp.src);
+        input_canvas.setWidth(temp.width);
+        input_canvas.setHeight(temp.height);
+        if (annotations[nFile] === undefined) {
+            annotations[nFile] = {
+                filename: uploads[nFile].name,
+                segmentation: new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1),
+                instance: new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1)
+            };
+        }
+        renderSegmentation();
+        renderInstance();
+    }
 }
