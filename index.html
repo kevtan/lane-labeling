@@ -5,6 +5,7 @@
     <script src="node_modules/fabric/dist/fabric.js"></script>
     <script src="scripts/grabcut.js"></script>
     <script src="scripts/rectangle.js"></script>
+    <script src="scripts/utlis.js"></script>
     <script src="scripts/imageInteractivity.js"></script>
     <link rel="stylesheet" href="styles.css">
     <title>Prototype</title>
@@ -16,6 +17,7 @@
     <script src="scripts/fileUpload.js"></script>
     <div>
         <strong>Mode:</strong>
+        <button onclick="changeInputMode('poly')">Polygon</button>
         <button onclick="changeInputMode('rect')">Rectangle</button>
         <button onclick="changeInputMode('green')">Green Line</button>
         <button onclick="changeInputMode('red')">Red Line</button>
@@ -98,6 +100,14 @@
                 bgdModel: null,
                 fgdModel: null,
                 fg_points: []
+            },
+            user_input: {
+                rectangle: null,
+                polygon: [],
+                corrections: {
+                    fg: [],
+                    bg: []
+                }
             }
         };
     </script>

@@ -1,15 +1,4 @@
 /*
-@brief Read an <img> or <canvas> element as 3-channel OpenCV matrix.
-@param img (HTMLCanvasElement, canvas ID, HTMLImageElement, or image ID)
-@return (cv.Mat | type cv.CV_8UC3)
-*/
-function readImage(img) {
-    const img_mat = cv.imread(img);
-    cv.cvtColor(img_mat, img_mat, cv.COLOR_RGBA2RGB);
-    return img_mat;
-}
-
-/*
 @brief Extract a rectangular ROI from an image.
 @param img (cv.Mat)
 @param rect (cv.Rect)
@@ -88,7 +77,6 @@ The purpose of affine1 is to move the box into the center of the image. The
 purpose of affine2 is to rotate the image about the center.
 */
 function rrectGrabCut(img, rrect, iters = 2) {
-    // transform image so rectangle is centered and upright
     const center = new cv.Point(img.cols / 2, img.rows / 2);
     const affine1 = new cv.matFromArray(2, 3, cv.CV_64FC1, [
         1, 0, center.x - rrect.center.x,
@@ -98,17 +86,14 @@ function rrectGrabCut(img, rrect, iters = 2) {
     cv.warpAffine(img, rectified, affine1, img.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
     const affine2 = cv.getRotationMatrix2D(center, rrect.angle, 1);
     cv.warpAffine(rectified, rectified, affine2, rectified.size(), cv.INTER_NEAREST, cv.BORDER_WRAP);
-    // transform rotated rectangle into regular one
     const rect = new cv.Rect(
         center.x - rrect.size.width / 2,
         center.y - rrect.size.height / 2,
         rrect.size.width,
         rrect.size.height
     );
-    // perform grabcut on the rectified image
     const result = rectGrabCut(rectified, rect);
     rectified.delete();
-    // transform the mask back to original orientation
     cv.warpAffine(result.mask, result.mask, affine2, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     cv.warpAffine(result.mask, result.mask, affine1, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     affine1.delete();
@@ -124,7 +109,10 @@ function rrectGrabCut(img, rrect, iters = 2) {
 */
 function polygonGrabCut(img, polygon, iters = 2) {
     const values = [];
-    polygon.map(pair => values.push(...pair));
+    polygon.map(pair => {
+        values.push(pair.x);
+        values.push(pair.y);
+    });
     const points = cv.matFromArray(polygon.length, 1, cv.CV_32SC2, values);
     const rrect = cv.minAreaRect(points);
     return rrectGrabCut(img, rrect);
