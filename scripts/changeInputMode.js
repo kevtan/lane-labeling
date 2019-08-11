@@ -1,7 +1,3 @@
-window.onkeypress = e => {
-    if (e.key == "Enter") computeGrabcut();
-};
-
 function changeInputMode(value) {
     input_canvas.__eventListeners = {} // TODO: Fix, hacky
     input_canvas.isDrawingMode = false;

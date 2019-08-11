@@ -4,14 +4,15 @@
     <script src="node_modules/opencv.js/opencv.js"></script>
     <script src="node_modules/fabric/dist/fabric.js"></script>
     <script src="scripts/grabcut.js"></script>
-    <script src="scripts/utlis.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/keyboardShortcuts.js"></script>
     <link rel="stylesheet" href="styles.css">
     <title>Prototype</title>
 </head>
 
 <body>
     <h1>Prototype</h1>
-    <input type="file" id="file_input" multiple>
+    <input type="file" id="file_input" accept="image/*" multiple>
     <script src="scripts/fileUpload.js"></script>
     <div>
         File
@@ -31,9 +32,9 @@
     </div>
     <div>
         Type
-        <button onclick="changeLaneType(this)">Dashed</button>
-        <button onclick="changeLaneType(this)">Solid</button>
-        <button onclick="changeLaneType(this)">Shoulder</button>
+        <button onclick="changeLaneType(this)">Dashed (d)</button>
+        <button onclick="changeLaneType(this)">Solid (s)</button>
+        <button onclick="changeLaneType(this)">Shoulder (r)</button>
         <input type="number" min="1" onchange="state.lane.number = parseInt(this.value)">Lane Number</input>
         <script>
             const changeLaneType = button => state.lane.type = button.innerText == 'Dashed' ? 'd' : button.innerText == 'Solid' ? 's' : 'r';

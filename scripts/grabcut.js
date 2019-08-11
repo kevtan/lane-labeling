@@ -50,10 +50,8 @@ function rectGrabCut(img, rect, iters = 2, padding = 25) {
     // note that cv.GC_BGD == 0
     const overall_mask = new cv.Mat.zeros(height, width, cv.CV_8UC1);
     for (let row = 0; row < position.height; row++) {
-        for (let col = 0; col < position.width; col++) {
-            const pixel = mask.ucharPtr(row, col);
-            overall_mask.ucharPtr(row + position.y, col + position.x)[0] = pixel[0];
-        }
+        for (let col = 0; col < position.width; col++)
+            overall_mask.ucharPtr(row + position.y, col + position.x)[0] = mask.ucharAt(row, col);
     }
     mask.delete();
     return {
@@ -92,13 +90,17 @@ function rrectGrabCut(img, rrect, iters = 2) {
         rrect.size.width,
         rrect.size.height
     );
-    const result = rectGrabCut(rectified, rect);
+    const { mask, bgdModel, fgdModel } = rectGrabCut(rectified, rect);
     rectified.delete();
-    cv.warpAffine(result.mask, result.mask, affine2, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
-    cv.warpAffine(result.mask, result.mask, affine1, result.mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
+    cv.warpAffine(mask, mask, affine2, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
+    cv.warpAffine(mask, mask, affine1, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     affine1.delete();
     affine2.delete();
-    return result;
+    return {
+        mask: mask,
+        bgdModel: bgdModel,
+        fgdModel: fgdModel
+    };
 }
 
 /*

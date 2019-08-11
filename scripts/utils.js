@@ -1,30 +1,4 @@
 /*
-@brief Read an <img> or <canvas> element as 3-channel OpenCV matrix.
-@param img (HTMLCanvasElement, canvas ID, HTMLImageElement, or image ID)
-@return (cv.Mat | type cv.CV_8UC3)
-*/
-function readImage(img) {
-    const img_mat = cv.imread(img);
-    cv.cvtColor(img_mat, img_mat, cv.COLOR_RGBA2RGB);
-    return img_mat;
-}
-
-/*
-@brief Extracts
-@return (cv.Mat | type cv.CV_8UC3)
-*/
-function takeSnapshot() {
-    input_canvas.remove(...input_canvas._objects);
-    input_canvas.renderAll();
-    const snapshot = readImage("input");
-    // resize due to cv.imread quirk
-    const dsize = new cv.Size(input_canvas.width, input_canvas.height);
-    cv.resize(snapshot, snapshot, dsize);
-    input_canvas.add(...input_canvas._objects);
-    return snapshot;
-}
-
-/*
 @brief Converts a fabric rectangle into an cv.RotatedRect.
 @param frect (fabric.Rect)
 @return (cv.RotatedRect)
@@ -81,21 +55,12 @@ function fcircles2points(fcircles) {
 }
 
 /*
-@brief Returns whether or not a value represents grabcut foreground
-@param value (number)
-@return bool
-*/
-function isForeground(value) {
-    return value[0] == cv.GC_FGD || value[0] == cv.GC_PR_FGD;
-}
-
-/*
 @brief Extract pixel locations in matrix that satisfy a predicate.
 @param matrix (cv.Mat)
 @param pred (function)
-@return (Array)
+@return (cv.Point[])
 */
-function extractMatrixPoints(matrix, pred) {
+function extractPoints(matrix, pred) {
     const points = [];
     for (let row = 0; row < matrix.rows; row++) {
         for (let col = 0; col < matrix.cols; col++) {
@@ -107,7 +72,7 @@ function extractMatrixPoints(matrix, pred) {
 }
 
 /*
-@brief Updates an OpenCV matrix at given points to be a certain value
+@brief Updates an OpenCV matrix at given points to be a certain value.
 @param matrix (cv.Mat)
 @param points (Array)
 @param value (Array)
@@ -124,8 +89,8 @@ function updateMatrix(matrix, points, value) {
 }
 
 /*
-@brief Updates an OpenCV matrix at given points to have a certain transparency level (alpha value)
-@param matrix (cv.Mat)
+@brief Updates an OpenCV matrix at given points to have a certain transparency level (alpha value).
+@param matrix (cv.Mat | type cv.CV_**C4)
 @param points (Array)
 @param alpha (number)
 */
@@ -143,23 +108,24 @@ function updateAlpha(matrix, points, alpha) {
     correction lines, etc.), compute the grabcut result and render it.
 */
 function computeGrabcut() {
-    const snapshot = takeSnapshot();
     if (state.input.rectangle == null) {
         // wait until polygon.js is done
     } else {
         const rrect = frect2crect(state.input.rectangle);
-        if (state.result) {
-            state.result.mask.delete();
-            state.result.fgdModel.delete();
-            state.result.bgdModel.delete();
+        if (result) {
+            result.mask.delete();
+            result.fgdModel.delete();
+            result.bgdModel.delete();
         }
-        state.result = rrectGrabCut(snapshot, rrect);
+        result = rrectGrabCut(cache[state.image].image, rrect);
     }
-    snapshot.delete();
-    const size = state.result.mask.size();
+    result.points = extractPoints(
+        result.mask,
+        pixel => pixel[0] == cv.GC_FGD || pixel[0] == cv.GC_PR_FGD
+    );
+    const size = result.mask.size();
     const foreground = new cv.Mat.zeros(size.height, size.width, cv.CV_8UC1);
-    state.result.fg_points = extractMatrixPoints(state.result.mask, isForeground);
-    updateMatrix(foreground, state.result.fg_points, [255]);
+    updateMatrix(foreground, result.points, [255]);
     cv.imshow("extracted", foreground);
     foreground.delete();
 }
