@@ -17,6 +17,7 @@ const updateInputMode = _ => {
         case "Pan":
             break;
         case "Rectangle":
+            input_canvas.remove(...input_canvas._objects);
             input_canvas.on("mouse:down", startRect);
             input_canvas.on("mouse:up", endRect);
             break;
@@ -35,7 +36,6 @@ const updateInputMode = _ => {
 @param e (MouseEvent)
 */
 const startRect = e => {
-    if (input.rectangle) input_canvas.remove(input.rectangle);
     const location = e.pointer;
     input.rectangle = new fabric.Rect({
         stroke: "fuchsia",

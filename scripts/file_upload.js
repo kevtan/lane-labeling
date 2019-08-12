@@ -31,6 +31,8 @@ document.getElementById('file_input').onchange = e => {
 @note Assumes that nImage parameter is a valid image index.
 */
 function displayImage(nImage) {
+    input_canvas.remove(...input_canvas._objects);
+    // setup view for new image
     if (!cache[nImage]) cache[nImage] = { dataURL: URL.createObjectURL(uploads[nImage]) };
     const cache_data = cache[nImage];
     const temp = document.createElement('img');
