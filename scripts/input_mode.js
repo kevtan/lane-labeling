@@ -67,29 +67,29 @@ const endRect = e => {
     input_canvas.add(input.rectangle);
 }
 
-// const PolygonPoint = (thisArg, left, top) => {
-//     return fabric.Circle.bind(thisArg, {
-//         left: left - RADIUS,
-//         top: top - RADIUS,
-//         radius: radius,
-//         // stroke: 'red',
-//         // fill: 'red',
-//         hasControls: false
-//     });
-// };
-
-// class PolygonPoint extends fabric.Circle input_canvas._objects[input_canvas._objects.length - 1]
-
-//     RADIUS = 2;
-
-//     constructor(left, top) {
-//         super({
-//             left: left - this.RADIUS,
-//             top: top - this.RADIUS,
-//             hasControls: false
-//         })
-//     }
-// }
+/*
+@brief Enables users to draw lines of a certain color that changes the grabcut mask.
+@param color (String)
+*/
+function enableLineDrawing(color) {
+    input_canvas.freeDrawingBrush.color = color;
+    input_canvas.on('mouse:up', _ => {
+        // prevent user from changing the path
+        const path = input_canvas._objects.pop();
+        path.set({
+            selectable: false,
+            hoverCursor: "crosshair"
+        });
+        input_canvas._objects.push(path);
+        // plot the path on mask
+        const value = color == 'green' ? new cv.Scalar(cv.GC_FGD) : new cv.Scalar(cv.GC_BGD);
+        const points = input_canvas.freeDrawingBrush._points;
+        for (let i = 0; i < points.length - 1; i++)
+            cv.line(result.mask, points[i], points[i + 1], value, path.strokeWidth);
+        computeGrabcut(true);
+    });
+    input_canvas.set('isDrawingMode', true);
+}
 
 function enablePolyDrawing() {
     input_canvas.on("mouse:down", e => {
@@ -139,43 +139,4 @@ function enableCursorLine(mouse_event) {
     canvas.lineX = new fabric.Line([0, location.y, width, location.y], lineType);
     canvas.add(canvas.lineX);
     canvas.add(canvas.lineY);
-}
-
-function enableLineDrawing(color) {
-    input_canvas.freeDrawingBrush.color = color;
-    input_canvas.on('mouse:up', _ => {
-        // prevent user from changing the path
-        const path = input_canvas._objects.pop();
-        path.set({
-            selectable: false,
-            hoverCursor: "crosshair"
-        });
-        input_canvas._objects.push(path);
-        // plot the path on mask
-        const value = color == 'green' ? new cv.Scalar(cv.GC_FGD) : new cv.Scalar(cv.GC_BGD);
-        const points = input_canvas.freeDrawingBrush._points;
-        for (let i = 0; i < points.length - 1; i++) {
-            const [start, end] = points.slice(i, i + 2);
-            cv.line(result.mask, start, end, value, path.strokeWidth);
-        }
-        computeGrabcut(true);
-    });
-    input_canvas.set('isDrawingMode', true);
-}
-
-function updateGrabcut() {
-    const image_mat = readImage('input');
-    const mask_copy = state.gc_result.mask.clone();
-    const lines = state.adjustment_lines;
-    lines.foreground.map(path => plotPath(mask_copy, path, new cv.Scalar(cv.GC_FGD), path.width));
-    lines.background.map(path => plotPath(mask_copy, path, new cv.Scalar(cv.GC_BGD), path.width));
-    const temp_result = maskGrabCut(
-        image_mat,
-        mask_copy,
-        state.gc_result.bgdModel,
-        state.gc_result.fgdModel
-    );
-    const fg_points = extractMaskPoints(mask_copy, isForeground);
-    updateMatrix(mask_copy, fg_points, [255]);
-    cv.imshow("extracted", mask_copy);
 }
