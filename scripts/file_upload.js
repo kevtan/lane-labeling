@@ -38,6 +38,11 @@ function displayImage(nImage) {
     const temp = document.createElement('img');
     temp.src = cache_data.dataURL;
     temp.onload = _ => {
+        // render an blank box for the extraction result
+        const foo = new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1);
+        cv.imshow("extracted", foo);
+        foo.delete();
+        // render the input image
         input_canvas.setDimensions({
             width: temp.width,
             height: temp.height
@@ -51,6 +56,7 @@ function displayImage(nImage) {
             cv.resize(image, image, dsize);
             cache_data.image = image;
         });
+        // render the tricolor segmentation and instance images
         if (!annotations[nImage]) {
             annotations[nImage] = {
                 filename: uploads[nImage].name,
