@@ -1,10 +1,10 @@
-window.onkeypress = e => {
+window.onkeydown = e => {
     switch (e.key) {
         case 'ArrowRight':
-            displayFile(state.image + 1);
+            displayImage(state.image + 1);
             break;
         case 'ArrowLeft':
-            displayFile(state.image - 1);
+            displayImage(state.image - 1);
             break;
         case 'd':
         case 's':

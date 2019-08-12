@@ -19,6 +19,7 @@ file_input.onchange = e => {
 @note This function doesn't do any error checking.
 */
 function displayImage(nImage) {
+    if (nImage < 0 || nImage >= uploads.length) return;
     state.image = nImage;
     if (!cache[nImage]) cache[nImage] = { dataURL: URL.createObjectURL(uploads[nImage]) };
     const cache_data = cache[nImage];

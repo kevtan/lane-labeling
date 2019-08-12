@@ -43,10 +43,10 @@ function satisfied() {
         alert("Please specify lane number, type, and color before committing changes!");
     const lane_encoding = getLaneInteger();
     const anno = annotations[state.image];
-    updateMatrix(anno.segmentation, state.result.fg_points, [lane_encoding]);
-    updateMatrix(anno.instance, state.result.fg_points, [state.lane.number]);
-    updateMatrix(cache[state.image].segmentation, state.result.fg_points, seg_plotvals[lane_encoding]);
-    updateMatrix(cache[state.image].instance, state.result.fg_points, ins_plotvals[state.lane.number]);
+    updateMatrix(anno.segmentation, result.points, [lane_encoding]);
+    updateMatrix(anno.instance, result.points, [state.lane.number]);
+    updateMatrix(cache[state.image].segmentation, result.points, seg_plotvals[lane_encoding]);
+    updateMatrix(cache[state.image].instance, result.points, ins_plotvals[state.lane.number]);
     renderSegmentation();
     renderInstance();
 }
