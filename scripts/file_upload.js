@@ -38,24 +38,8 @@ function displayImage(nImage) {
     const temp = document.createElement('img');
     temp.src = cache_data.dataURL;
     temp.onload = _ => {
-        // render an blank box for the extraction result
-        const foo = new cv.Mat.zeros(temp.height, temp.width, cv.CV_8UC1);
-        cv.imshow("extracted", foo);
-        foo.delete();
-        // render the input image
-        input_canvas.setDimensions({
-            width: temp.width,
-            height: temp.height
-        });
-        input_canvas.setBackgroundImage(cache_data.dataURL, _ => {
-            input_canvas.renderAll();
-            if (cache_data.image) return;
-            const image = cv.imread("input");
-            cv.cvtColor(image, image, cv.COLOR_RGBA2RGB);
-            const dsize = new cv.Size(input_canvas.width, input_canvas.height);
-            cv.resize(image, image, dsize);
-            cache_data.image = image;
-        });
+        resetExtractedCanvas(temp);
+        renderInputImage(temp, cache_data);
         // render the tricolor segmentation and instance images
         if (!annotations[nImage]) {
             annotations[nImage] = {
@@ -69,4 +53,35 @@ function displayImage(nImage) {
         cv.imshow("segmentation", cache_data.segmentation);
         cv.imshow("instance", cache_data.instance);
     };
+}
+
+/*
+@brief Erases all data in extracted canvas.
+@param img (HTMLImageElement)
+*/
+const resetExtractedCanvas = img => {
+    const temp = new cv.Mat.zeros(img.height, img.width, cv.CV_8UC1);
+    cv.imshow("extracted", temp);
+    temp.delete();
+}
+
+/*
+@brief Renders the given image onto input canvas, caching the image if uncached.
+@param img (HTMLImageElement)
+@param cache_data (Object)
+*/
+const renderInputImage = (img, cache_data) => {
+    input_canvas.setDimensions({
+        width: img.width,
+        height: img.height
+    });
+    input_canvas.setBackgroundImage(cache_data.dataURL, _ => {
+        input_canvas.renderAll();
+        if (cache_data.image) return;
+        const image = cv.imread("input");
+        cv.cvtColor(image, image, cv.COLOR_RGBA2RGB);
+        const dsize = new cv.Size(input_canvas.width, input_canvas.height);
+        cv.resize(image, image, dsize);
+        cache_data.image = image;
+    });
 }
