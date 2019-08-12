@@ -16,7 +16,7 @@
     <script src="scripts/file_upload.js"></script>
     <div>
         File
-        <input id="file_chooser" type="number" onchange="displayImage(this.value)">
+        <input id="file_chooser" type="number" min=0 onchange="displayImage(this.value)">
     </div>
     <div>
         Mode
@@ -38,7 +38,7 @@
         <button onclick="changeLaneType(this)">Shoulder (r)</button>
         <input type="number" min="1" onchange="state.lane.number = parseInt(this.value)">Lane Number</input>
         <script>
-            const changeLaneType = button => state.lane.type = button.innerText == 'Dashed' ? 'd' : button.innerText == 'Solid' ? 's' : 'r';
+            const changeLaneType = button => state.lane.type = button.innerText == 'Dashed (d)' ? 'd' : button.innerText == 'Solid (s)' ? 's' : 'r';
         </script>
     </div>
     <div>

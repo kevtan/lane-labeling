@@ -42,11 +42,11 @@ function satisfied() {
     if (state.lane.number == null || state.lane.type == null || state.lane.color == null)
         alert("Please specify lane number, type, and color before committing changes!");
     const lane_encoding = getLaneInteger();
-    const anno = annotations[state.image];
+    const anno = annotations[getImageNo()];
     updateMatrix(anno.segmentation, result.points, [lane_encoding]);
     updateMatrix(anno.instance, result.points, [state.lane.number]);
-    updateMatrix(cache[state.image].segmentation, result.points, seg_plotvals[lane_encoding]);
-    updateMatrix(cache[state.image].instance, result.points, ins_plotvals[state.lane.number]);
+    updateMatrix(cache[getImageNo()].segmentation, result.points, seg_plotvals[lane_encoding]);
+    updateMatrix(cache[getImageNo()].instance, result.points, ins_plotvals[state.lane.number]);
     renderSegmentation();
     renderInstance();
 }
@@ -56,8 +56,8 @@ function satisfied() {
 @note only used for validators to recover colorful image from 1 channel image
 */
 function renderSegmentation() {
-    if (!cache[state.image].segmentation) {
-        const anno = annotations[state.image];
+    if (!cache[getImageNo()].segmentation) {
+        const anno = annotations[getImageNo()];
         const seg = anno.segmentation;
         const copy = new cv.Mat.zeros(seg.rows, seg.cols, cv.CV_8UC3);
         for (let i = 0; i < seg.rows; i++) {
@@ -68,9 +68,9 @@ function renderSegmentation() {
                 copy.ucharPtr(i, j)[2] = pixelVal[2];
             }
         }
-        cache[state.image].segmentation = copy;
+        cache[getImageNo()].segmentation = copy;
     }
-    cv.imshow("segmentation", cache[state.image].segmentation);
+    cv.imshow("segmentation", cache[getImageNo()].segmentation);
 }
 
 /*
@@ -78,8 +78,8 @@ function renderSegmentation() {
 @note only used for validators to recover colorful image from 1 channel image
 */
 function renderInstance() {
-    if (!cache[state.image].instance) {
-        const anno = annotations[state.image];
+    if (!cache[getImageNo()].instance) {
+        const anno = annotations[getImageNo()];
         const ins = anno.instance;
         const copy = new cv.Mat.zeros(ins.rows, ins.cols, cv.CV_8UC3);
         for (let i = 0; i < ins.rows; i++) {
@@ -90,7 +90,7 @@ function renderInstance() {
                 copy.ucharPtr(i, j)[2] = pixelVal[2];
             }
         }
-        cache[state.image].instance = copy;
+        cache[getImageNo()].instance = copy;
     }
-    cv.imshow("instance", cache[state.image].instance);
+    cv.imshow("instance", cache[getImageNo()].instance);
 }

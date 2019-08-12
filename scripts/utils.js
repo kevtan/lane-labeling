@@ -112,7 +112,7 @@ function computeGrabcut(maskgc = false) {
         // wait until polygon.js is done
     } else if (maskgc) {
         maskGrabCut(
-            cache[state.image].image,
+            cache[getImageNo()].image,
             result.mask,
             result.bgdModel,
             result.fgdModel
@@ -124,7 +124,7 @@ function computeGrabcut(maskgc = false) {
             result.fgdModel.delete();
             result.bgdModel.delete();
         }
-        result = rrectGrabCut(cache[state.image].image, rrect);
+        result = rrectGrabCut(cache[getImageNo()].image, rrect);
     }
     result.points = extractPoints(
         result.mask,

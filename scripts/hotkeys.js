@@ -1,10 +1,10 @@
 window.onkeydown = e => {
     switch (e.key) {
         case 'ArrowRight':
-            displayImage(state.image + 1);
+            setImageNo(getImageNo() + 1);
             break;
         case 'ArrowLeft':
-            displayImage(state.image - 1);
+            setImageNo(getImageNo() - 1);
             break;
         case 'd':
         case 's':

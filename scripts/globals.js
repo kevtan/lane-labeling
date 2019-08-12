@@ -3,7 +3,6 @@ const input_canvas = new fabric.Canvas('input', {
 });
 
 const state = {
-    image: 0,
     lane: {
         number: null,
         type: null,
@@ -11,6 +10,9 @@ const state = {
     },
     mode: null
 };
+
+/* HTMLElement that stores data about which image we're annotating. */
+const file_chooser = document.getElementById('file_chooser');
 
 /*
 Object containing all user input: rectangles, polygons, and correction lines.
