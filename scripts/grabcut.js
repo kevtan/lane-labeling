@@ -27,7 +27,7 @@ function extractRectFromImage(img, rect) {
 
 TODO: Try a resizing (double the size) to see if effects are better for small images
 */
-function rectGrabCut(img, rect, iters = 2, padding = 25) {
+function rectGrabCut(img, rect, iters = 3, padding = 25) {
     const rect_expanded = new cv.Rect(
         rect.x - padding,
         rect.y - padding,
@@ -74,7 +74,7 @@ affine transformation. The first makes up its own affine transformation.
 The purpose of affine1 is to move the box into the center of the image. The
 purpose of affine2 is to rotate the image about the center.
 */
-function rrectGrabCut(img, rrect, iters = 2) {
+function rrectGrabCut(img, rrect, iters = 3) {
     const center = new cv.Point(img.cols / 2, img.rows / 2);
     const affine1 = new cv.matFromArray(2, 3, cv.CV_64FC1, [
         1, 0, center.x - rrect.center.x,
@@ -90,7 +90,7 @@ function rrectGrabCut(img, rrect, iters = 2) {
         rrect.size.width,
         rrect.size.height
     );
-    const { mask, bgdModel, fgdModel } = rectGrabCut(rectified, rect);
+    const { mask, bgdModel, fgdModel } = rectGrabCut(rectified, rect, iters);
     rectified.delete();
     cv.warpAffine(mask, mask, affine2, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     cv.warpAffine(mask, mask, affine1, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
@@ -132,11 +132,6 @@ function polygonGrabCut(img, polygon, iters = 2) {
       fgdModel: (cv.Mat | type cv.CV_64FC1)
 */
 function maskGrabCut(img, mask, bgdModel, fgdModel, iters = 2) {
-    if (bgdModel == null && fgdModel == null) {
-        // create empty GMMs if left unspecified
-        bgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1);
-        fgdModel = new cv.Mat.zeros(1, 65, cv.CV_64FC1);
-    }
     cv.grabCut(img, mask, new cv.Rect(), bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK);
     return { "mask": mask, "bgdModel": bgdModel, "fgdModel": fgdModel }
 }

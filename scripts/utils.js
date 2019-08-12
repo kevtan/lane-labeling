@@ -107,11 +107,18 @@ function updateAlpha(matrix, points, alpha) {
 @brief Given the current state of the canvas (background image, rectangle/polygon,
     correction lines, etc.), compute the grabcut result and render it.
 */
-function computeGrabcut() {
-    if (state.input.rectangle == null) {
+function computeGrabcut(maskgc = false) {
+    if (!input.rectangle) {
         // wait until polygon.js is done
+    } else if (maskgc) {
+        maskGrabCut(
+            cache[state.image].image,
+            result.mask,
+            result.bgdModel,
+            result.fgdModel
+        );
     } else {
-        const rrect = frect2crect(state.input.rectangle);
+        const rrect = frect2crect(input.rectangle);
         if (result) {
             result.mask.delete();
             result.fgdModel.delete();

@@ -1,51 +1,70 @@
-function changeInputMode(value) {
-    input_canvas.__eventListeners = {} // TODO: Fix, hacky
-    input_canvas.isDrawingMode = false;
-    if (value == 'pan') return;
-    else if (value == 'poly') enablePolyDrawing();
-    else if (value == 'rect') {
-        input_canvas.on("mouse:down", startRect);
-        input_canvas.on("mouse:up", endRect);
-    } else enableLineDrawing(value);
+/*
+@brief Event handler for input mode buttons.
+@param button (HTMLButtonElement)
+*/
+const setInputMode = button => {
+    state.mode = button.innerText;
+    updateInputMode();
+}
+
+/*
+@brief Changes the input mode based on state.mode.
+*/
+const updateInputMode = _ => {
+    input_canvas.__eventListeners = new Object();
+    input_canvas.set('isDrawingMode', false);
+    switch (state.mode) {
+        case "Pan":
+            break;
+        case "Rectangle":
+            input_canvas.on("mouse:down", startRect);
+            input_canvas.on("mouse:up", endRect);
+            break;
+        case "Polygon":
+        case "Green Line":
+            enableLineDrawing('green');
+            break;
+        case "Red Line":
+            enableLineDrawing('red');
+            break;
+    };
 }
 
 /*
 @brief Starts creating a rectangle to render on the input canvas.
-@param (MouseEvent)
+@param e (MouseEvent)
 */
-function startRect(mouse_event) {
-    let input = state.input;
+const startRect = e => {
     if (input.rectangle) input_canvas.remove(input.rectangle);
+    const location = e.pointer;
     input.rectangle = new fabric.Rect({
-        stroke: 'blue',
-        fill: 'rgba(0, 0, 0, 0)'
+        stroke: "fuchsia",
+        fill: "transparent",
+        left: Math.round(location.x),
+        top: Math.round(location.y)
     });
-    const location = mouse_event.pointer;
-    input.rectangle.left = Math.round(location.x);
-    input.rectangle.top = Math.round(location.y);
 }
 
 /*
 @brief Ends creating a rectangle to render on the input canvas.
-@param (MouseEvent)
+@param e (MouseEvent)
 */
-function endRect(mouse_event) {
-    const rect = state.input.rectangle;
-    const location = mouse_event.pointer;
-    let width = Math.round(location.x) - rect.left;
-    let height = Math.round(location.y) - rect.top;
+const endRect = e => {
+    const location = e.pointer;
+    let width = Math.round(location.x) - input.rectangle.left;
+    let height = Math.round(location.y) - input.rectangle.top;
     if (width == 0 || height == 0) return;
     if (width < 0) {
-        rect.left = rect.left + width;
+        input.rectangle.left = input.rectangle.left + width;
         width = -width;
     }
     if (height < 0) {
-        rect.top = rect.top + height;
+        input.rectangle.top = input.rectangle.top + height;
         height = -height;
     }
-    rect.width = width;
-    rect.height = height;
-    input_canvas.add(rect);
+    input.rectangle.width = width;
+    input.rectangle.height = height;
+    input_canvas.add(input.rectangle);
 }
 
 // const PolygonPoint = (thisArg, left, top) => {
@@ -59,7 +78,7 @@ function endRect(mouse_event) {
 //     });
 // };
 
-// class PolygonPoint extends fabric.Circle {
+// class PolygonPoint extends fabric.Circle input_canvas._objects[input_canvas._objects.length - 1]
 
 //     RADIUS = 2;
 
@@ -123,16 +142,25 @@ function enableCursorLine(mouse_event) {
 }
 
 function enableLineDrawing(color) {
-    canvas.freeDrawingBrush.color = color;
-    canvas.isDrawingMode = true;
-    canvas.on("mouse:up", _ => {
-        const lines = state.adjustment_lines;
-        const points = canvas.freeDrawingBrush._points;
-        points.width = canvas.freeDrawingBrush.width;
-        if (color == 'green') lines.foreground.push(points);
-        else lines.background.push(points);
-        updateGrabcut();
+    input_canvas.freeDrawingBrush.color = color;
+    input_canvas.on('mouse:up', _ => {
+        // prevent user from changing the path
+        const path = input_canvas._objects.pop();
+        path.set({
+            selectable: false,
+            hoverCursor: "crosshair"
+        });
+        input_canvas._objects.push(path);
+        // plot the path on mask
+        const value = color == 'green' ? new cv.Scalar(cv.GC_FGD) : new cv.Scalar(cv.GC_BGD);
+        const points = input_canvas.freeDrawingBrush._points;
+        for (let i = 0; i < points.length - 1; i++) {
+            const [start, end] = points.slice(i, i + 2);
+            cv.line(result.mask, start, end, value, path.strokeWidth);
+        }
+        computeGrabcut(true);
     });
+    input_canvas.set('isDrawingMode', true);
 }
 
 function updateGrabcut() {

@@ -9,15 +9,17 @@ const state = {
         type: null,
         color: null
     },
-    input: {
-        rectangle: null,
-        polygon: [],
-        corrections: {
-            fg: [],
-            bg: []
-        }
-    }
+    mode: null
 };
+
+/*
+Object containing all user input: rectangles, polygons, and correction lines.
+{
+    rectangle: fabric.Rect,
+    polygon: Polygon
+}
+*/
+const input = new Object();
 
 /*
 Object containing the result of the latest grabcut operation. For example:

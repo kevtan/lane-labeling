@@ -20,11 +20,12 @@
     </div>
     <div>
         Mode
-        <button onclick="changeInputMode('poly')">Polygon</button>
-        <button onclick="changeInputMode('rect')">Rectangle</button>
-        <button onclick="changeInputMode('green')">Green Line</button>
-        <button onclick="changeInputMode('red')">Red Line</button>
-        <button onclick="changeInputMode('pan')">Pan</button>
+        <button onclick="setInputMode(this)">Polygon</button>
+        <button onclick="setInputMode(this)">Rectangle</button>
+        <button onclick="setInputMode(this)">Green Line</button>
+        <button onclick="setInputMode(this)">Red Line</button>
+        <button onclick="setInputMode(this)">Pan</button>
+        <script src="scripts/input_mode.js"></script>
     </div>
     <div>
         Brush Width
@@ -50,7 +51,6 @@
     </div>
     <button id="satisfied" onclick="satisfied()">Satisfied</button>
     <script src="scripts/satisfied.js"></script>
-    <script src="scripts/changeInputMode.js"></script>
     <div class="canvases">
         <div>
             <h2>Input</h2>

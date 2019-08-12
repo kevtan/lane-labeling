@@ -27,8 +27,15 @@ window.onkeydown = e => {
         case '9':
             state.lane.number = parseInt(e.key);
             break;
-        case 'Enter':
+        case '\\':
+            input.rectangle.set({
+                "selectable": false,
+                "hoverCursor": "crosshair"
+            });
             computeGrabcut();
+            break;
+        case 'Enter':
+            satisfied();
             break;
     }
 };
