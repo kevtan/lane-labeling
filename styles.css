@@ -1,3 +1,7 @@
 .canvases div {
     display: inline-block;
 }
+
+.instructions {
+    display: inline-block;
+}

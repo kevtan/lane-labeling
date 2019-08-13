@@ -12,45 +12,37 @@
 
 <body>
     <h1>Prototype</h1>
-    <input type="file" id="file_input" accept="image/*" multiple>
-    <script src="scripts/file_upload.js"></script>
     <div>
+        <input type="file" id="file_input" accept="image/*" multiple>
+        <script src="scripts/file_upload.js"></script>
         File
         <input id="file_chooser" type="number" min=0 onchange="displayImage(this.value)">
     </div>
-    <div>
-        Mode
-        <button onclick="setInputMode(this)">Polygon</button>
-        <button onclick="setInputMode(this)">Rectangle</button>
-        <button onclick="setInputMode(this)">Green Line</button>
-        <button onclick="setInputMode(this)">Red Line</button>
-        <button onclick="setInputMode(this)">Pan</button>
-        <script src="scripts/input_mode.js"></script>
-    </div>
-    <div>
-        Brush Width
-        <input type="number" min="0" onchange="input_canvas.freeDrawingBrush.width = parseInt(this.value)">
-    </div>
-    <div>
-        Type
-        <button onclick="changeLaneType(this)">Dashed (d)</button>
-        <button onclick="changeLaneType(this)">Solid (s)</button>
-        <button onclick="changeLaneType(this)">Shoulder (r)</button>
-        <input type="number" min="1" onchange="state.lane.number = parseInt(this.value)">Lane Number</input>
-        <script>
-            const changeLaneType = button => state.lane.type = button.innerText == 'Dashed (d)' ? 'd' : button.innerText == 'Solid (s)' ? 's' : 'r';
-        </script>
-    </div>
-    <div>
-        Color
-        <button onclick="changeLaneColor(this)">White</button>
-        <button onclick="changeLaneColor(this)">Yellow</button>
-        <script>
-            const changeLaneColor = button => state.lane.color = button.innerText === 'White' ? 'w' : 'y';
-        </script>
-    </div>
-    <button id="satisfied" onclick="satisfied()">Satisfied</button>
+    <ul class="instructions">
+        <li><b>a</b>: rectangle</li>
+        <li><b>s</b>: polygon</li>
+        <li><b>d</b>: green line</li>
+        <li><b>D</b>: red line</li>
+        <li><b>f</b>: pan</li>
+    </ul>
+    <ul class="instructions">
+        <li><b>R</b>: previous image</li>
+        <li><b>r</b>: next image</li>
+        <li><b>E</b>: decrease brush width</li>
+        <li><b>e</b>: increase brush width</li>
+        <li><b>c</b>: grabcut operation</li>
+        <li><b>C</b>: satisfied</li>
+    </ul>
+    <ul class="instructions">
+        <li><b>z</b>: dashed</li>
+        <li><b>Z</b>: solid</li>
+        <li><b>x</b>: shoulder</li>
+        <li><b>w</b>: white</li>
+        <li><b>W</b>: yellow</li>
+    </ul>
+    <script src="scripts/input_mode.js"></script>
     <script src="scripts/satisfied.js"></script>
+    <br>
     <div class="canvases">
         <div>
             <h2>Input</h2>

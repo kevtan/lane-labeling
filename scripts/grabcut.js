@@ -66,6 +66,7 @@ function rectGrabCut(img, rect, iters = 3, padding = 25) {
 @param img (cv.Mat | type cv.CV_8UC3)
 @param rrect (cv.RotatedRect)
 @param iters (number)
+@param padding (number)
 @return mask (cv.Mat | type cv.CV_8UC1), bgdModel (cv.Mat | type cv.CV_64FC1), fgdModel: (cv.Mat | type cv.CV_64FC1)
 
 Note: Our desired image transformation involves a translation, then rotation,
@@ -74,7 +75,7 @@ affine transformation. The first makes up its own affine transformation.
 The purpose of affine1 is to move the box into the center of the image. The
 purpose of affine2 is to rotate the image about the center.
 */
-function rrectGrabCut(img, rrect, iters = 3) {
+function rrectGrabCut(img, rrect, iters = 3, padding = 25) {
     const center = new cv.Point(img.cols / 2, img.rows / 2);
     const affine1 = new cv.matFromArray(2, 3, cv.CV_64FC1, [
         1, 0, center.x - rrect.center.x,
@@ -90,7 +91,7 @@ function rrectGrabCut(img, rrect, iters = 3) {
         rrect.size.width,
         rrect.size.height
     );
-    const { mask, bgdModel, fgdModel } = rectGrabCut(rectified, rect, iters);
+    const { mask, bgdModel, fgdModel } = rectGrabCut(rectified, rect, iters, padding);
     rectified.delete();
     cv.warpAffine(mask, mask, affine2, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
     cv.warpAffine(mask, mask, affine1, mask.size(), cv.INTER_NEAREST | cv.WARP_INVERSE_MAP);
@@ -106,18 +107,15 @@ function rrectGrabCut(img, rrect, iters = 3) {
 /*
 @brief Extract a foreground object given an enclosing polygonal boundary.
 @param img (cv.Mat | type cv.CV_8UC3)
-@param polygon (Array)
+@param polygon (cv.Mat | type cv.CV_32SC2)
 @iters (number)
+@param padding (number)
+@return mask (cv.Mat | type cv.CV_8UC1), bgdModel (cv.Mat | type cv.CV_64FC1), fgdModel: (cv.Mat | type cv.CV_64FC1)
 */
-function polygonGrabCut(img, polygon, iters = 2) {
-    const values = [];
-    polygon.map(pair => {
-        values.push(pair.x);
-        values.push(pair.y);
-    });
-    const points = cv.matFromArray(polygon.length, 1, cv.CV_32SC2, values);
-    const rrect = cv.minAreaRect(points);
-    return rrectGrabCut(img, rrect);
+function polygonGrabCut(img, polygon, iters = 3, padding = 25) {
+    const rrect = cv.minAreaRect(polygon);
+    return rrectGrabCut(img, rrect, iters, padding);
+    // modify initial prediction with mask
 }
 
 /*
@@ -133,5 +131,9 @@ function polygonGrabCut(img, polygon, iters = 2) {
 */
 function maskGrabCut(img, mask, bgdModel, fgdModel, iters = 2) {
     cv.grabCut(img, mask, new cv.Rect(), bgdModel, fgdModel, iters, cv.GC_INIT_WITH_MASK);
-    return { "mask": mask, "bgdModel": bgdModel, "fgdModel": fgdModel }
+    return {
+        mask: mask,
+        bgdModel: bgdModel,
+        fgdModel: fgdModel
+    };
 }

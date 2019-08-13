@@ -8,7 +8,7 @@ const seg_plotvals = [
 ];
 
 const ins_plotvals = [
-    [0, 0, 0],
+    [0, 0, 0], // black
     [27, 161, 226], // cyan
     [244, 114, 208], // pink
     [250, 104, 0], // orange

@@ -1,27 +1,27 @@
 /*
-@brief Event handler for input mode buttons.
-@param button (HTMLButtonElement)
+@brief Changes the input mode.
+@param mode (String)
 */
-const setInputMode = button => {
-    state.mode = button.innerText;
-    updateInputMode();
-}
-
-/*
-@brief Changes the input mode based on state.mode.
-*/
-const updateInputMode = _ => {
+const setInputMode = mode => {
+    state.mode = mode
     input_canvas.__eventListeners = new Object();
     input_canvas.set('isDrawingMode', false);
-    switch (state.mode) {
+    switch (mode) {
         case "Pan":
             break;
         case "Rectangle":
             input_canvas.remove(...input_canvas._objects);
+            input.type = "Rectangle";
             input_canvas.on("mouse:down", startRect);
             input_canvas.on("mouse:up", endRect);
             break;
         case "Polygon":
+            input_canvas.remove(...input_canvas._objects);
+            input.type = "Polygon";
+            input.data = [];
+            input_canvas.on("mouse:down", placePoint);
+            input_canvas.on("mouse:dblclick", endPolygon);
+            break;
         case "Green Line":
             enableLineDrawing('green');
             break;
@@ -36,8 +36,9 @@ const updateInputMode = _ => {
 @param e (MouseEvent)
 */
 const startRect = e => {
+    input_canvas.remove(...input_canvas._objects);
     const location = e.pointer;
-    input.rectangle = new fabric.Rect({
+    input.data = new fabric.Rect({
         stroke: "fuchsia",
         fill: "transparent",
         left: Math.round(location.x),
@@ -51,20 +52,21 @@ const startRect = e => {
 */
 const endRect = e => {
     const location = e.pointer;
-    let width = Math.round(location.x) - input.rectangle.left;
-    let height = Math.round(location.y) - input.rectangle.top;
+    let width = Math.round(location.x) - input.data.left;
+    let height = Math.round(location.y) - input.data.top;
     if (width == 0 || height == 0) return;
+    const rect = input.data;
     if (width < 0) {
-        input.rectangle.left = input.rectangle.left + width;
+        rect.left = rect.left + width;
         width = -width;
     }
     if (height < 0) {
-        input.rectangle.top = input.rectangle.top + height;
+        rect.top = rect.top + height;
         height = -height;
     }
-    input.rectangle.width = width;
-    input.rectangle.height = height;
-    input_canvas.add(input.rectangle);
+    rect.width = width;
+    rect.height = height;
+    input_canvas.add(rect);
 }
 
 /*
@@ -91,34 +93,60 @@ function enableLineDrawing(color) {
     input_canvas.set('isDrawingMode', true);
 }
 
+/*
+@brief Adds a point to the current polygon.
+*/
+const placePoint = e => {
+    // finish previous line, if exists
+    if (input.data.length != 0) {
+        const old_line = input_canvas._objects.pop();
+        old_line.set({ x2: e.pointer.x, y2: e.pointer.y });
+        input_canvas._objects.push(old_line);
+        delete input_canvas.__eventListeners["mouse:move"];
+    }
+    // add new point to canvas
+    const RADIUS = 2;
+    const new_point = new fabric.Circle({
+        left: e.pointer.x - RADIUS,
+        top: e.pointer.y - RADIUS,
+        radius: RADIUS,
+        fill: 'fuchsia',
+        hasControls: false
+    });
+    input.data.push(new_point);
+    input_canvas.add(new_point);
+    // create line from new point
+    const new_line = new fabric.Line([e.pointer.x, e.pointer.y, e.pointer.x, e.pointer.y], {
+        stroke: 'fuchsia'
+    });
+    input_canvas.add(new_line);
+    input_canvas.on("mouse:move", f => {
+        new_line.set({ x2: f.pointer.x, y2: f.pointer.y });
+        input_canvas.renderAll();
+    });
+}
+
+/*
+@brief Completes the current polygon.
+*/
+function endPolygon() {
+
+}
+
 function enablePolyDrawing() {
+    input.data = new Array();
     input_canvas.on("mouse:down", e => {
         const location = e.pointer;
         const RADIUS = 2;
-        state.user_input.polygon.push(new fabric.Circle({
+        input.data.push(new fabric.Circle({
             left: location.x - RADIUS,
             top: location.y - RADIUS,
             radius: RADIUS,
             fill: 'red',
             hasControls: false
         }));
-        input_canvas.add(...state.user_input.polygon);
+        input_canvas.add(...input.data);
     });
-    window.onkeypress = e => {
-        if (e.key == 'Enter') {
-            const snapshot = takeSnapshot();
-            const points = fcircles2points(state.user_input.polygon);
-            state.gc_result = polygonGrabCut(snapshot, points);
-            snapshot.delete();
-            const mask_copy = state.gc_result.mask.clone();
-            state.gc_result.fg_points = extractMaskPoints(mask_copy, isForeground);
-            updateMatrix(mask_copy, state.gc_result.fg_points, [255]);
-            cv.imshow("extracted", mask_copy);
-            mask_copy.delete();
-            // replace relics
-            input_canvas.add(...state.user_input.polygon);
-        }
-    }
 }
 
 function enableCursorLine(mouse_event) {

@@ -4,14 +4,28 @@
 @return (cv.RotatedRect)
 */
 function frect2crect(frect) {
-    const vertices = frect.aCoords;
-    const crect = new cv.RotatedRect();
-    crect.center.x = (vertices.tl.x + vertices.br.x) / 2;
-    crect.center.y = (vertices.tl.y + vertices.br.y) / 2;
-    crect.size.width = frect.getScaledWidth();
-    crect.size.height = frect.getScaledHeight();
-    crect.angle = frect.angle;
-    return crect;
+    return new cv.RotatedRect(
+        frect.getCenterPoint(),
+        new cv.Size(frect.width, frect.height),
+        frect.angle
+    );
+}
+
+/*
+@brief Converts a cv.RotatedRect into a fabric rectangle.
+@param crect (cv.RotatedRect)
+@return (fabric.Rect)
+*/
+function crect2frect(crect) {
+    return new fabric.Rect({
+        left: crect.center.x - crect.size.width / 2,
+        top: crect.center.y - crect.size.height / 2,
+        width: crect.size.width,
+        height: crect.size.height,
+        angle: crect.angle,
+        stroke: "fuchsia",
+        fill: "transparent"
+    });
 }
 
 /*
@@ -20,7 +34,7 @@ function frect2crect(frect) {
 @param rrect (cv.RotatedRect)
 @param color (cv.Scalar)
 */
-function drawRotatedRect(matrix, rrect, color, width = 1) {
+function plotRotatedRect(matrix, rrect, color, width = 1) {
     const points = cv.rotatedRectPoints(rrect);
     const first = points[0];
     points.push(first);
@@ -44,14 +58,19 @@ function plotPath(matrix, points, color, thickness) {
 }
 
 /*
-@brief Converts an array of fabric.Circle objects into an array of cv.Point objects.
+@brief Converts an array of fabric.Circle objects into an OpenCV matrix.
 @param fcircles (fabric.Circle[])
+@return matrix (cv.Mat | type cv.CV_32SC2)
 */
-function fcircles2points(fcircles) {
-    return fcircles.map(fcircle => new cv.Point(
-        fcircle.left + fcircle.radius,
-        fcircle.top + fcircle.radius
-    ));
+function fcircles2cmatrix(fcircles) {
+    const points = []
+    fcircles.map(
+        fcircle => points.push(
+            fcircle.left + fcircle.radius,
+            fcircle.top + fcircle.radius
+        )
+    );
+    return cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
 }
 
 /*
@@ -108,23 +127,28 @@ function updateAlpha(matrix, points, alpha) {
     correction lines, etc.), compute the grabcut result and render it.
 */
 function computeGrabcut(maskgc = false) {
-    if (!input.rectangle) {
-        // wait until polygon.js is done
-    } else if (maskgc) {
+    const nImage = getImageNo();
+    if (maskgc) {
         maskGrabCut(
-            cache[getImageNo()].image,
+            cache[nImage].image,
             result.mask,
             result.bgdModel,
             result.fgdModel
         );
     } else {
-        const rrect = frect2crect(input.rectangle);
-        if (result) {
-            result.mask.delete();
-            result.fgdModel.delete();
-            result.bgdModel.delete();
+        if (input.type == "Rectangle") {
+            const rrect = frect2crect(input.data);
+            if (result) {
+                result.mask.delete();
+                result.fgdModel.delete();
+                result.bgdModel.delete();
+            }
+            result = rrectGrabCut(cache[nImage].image, rrect);
+        } else {
+            const points = fcircles2cmatrix(input.data);
+            result = polygonGrabCut(cache[nImage].image, points);
+            points.delete();
         }
-        result = rrectGrabCut(cache[getImageNo()].image, rrect);
     }
     result.points = extractPoints(
         result.mask,

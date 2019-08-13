@@ -15,13 +15,13 @@ const state = {
 const file_chooser = document.getElementById('file_chooser');
 
 /*
-Object containing all user input: rectangles, polygons, and correction lines.
+Object containing user input rectangle xor polygon.
 {
-    rectangle: fabric.Rect,
-    polygon: Polygon
+    type: String,
+    data: fabric.Rect | fabric.Circle[]
 }
 */
-const input = new Object();
+let input = new Object();
 
 /*
 Object containing the result of the latest grabcut operation. For example:
