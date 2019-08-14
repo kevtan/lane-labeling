@@ -49,8 +49,8 @@ function rectGrabCut(img, rect, iters = 3, padding = 25) {
     const { width, height } = img.size();
     // note that cv.GC_BGD == 0
     const overall_mask = new cv.Mat.zeros(height, width, cv.CV_8UC1);
-    for (let row = 0; row < position.height; row++) {
-        for (let col = 0; col < position.width; col++)
+    for (let row = 0; row < position.height - 1; row++) {
+        for (let col = 0; col < position.width - 1; col++)
             overall_mask.ucharPtr(row + position.y, col + position.x)[0] = mask.ucharAt(row, col);
     }
     mask.delete();
@@ -102,20 +102,6 @@ function rrectGrabCut(img, rrect, iters = 3, padding = 25) {
         bgdModel: bgdModel,
         fgdModel: fgdModel
     };
-}
-
-/*
-@brief Extract a foreground object given an enclosing polygonal boundary.
-@param img (cv.Mat | type cv.CV_8UC3)
-@param polygon (cv.Mat | type cv.CV_32SC2)
-@iters (number)
-@param padding (number)
-@return mask (cv.Mat | type cv.CV_8UC1), bgdModel (cv.Mat | type cv.CV_64FC1), fgdModel: (cv.Mat | type cv.CV_64FC1)
-*/
-function polygonGrabCut(img, polygon, iters = 3, padding = 25) {
-    const rrect = cv.minAreaRect(polygon);
-    return rrectGrabCut(img, rrect, iters, padding);
-    // modify initial prediction with mask
 }
 
 /*

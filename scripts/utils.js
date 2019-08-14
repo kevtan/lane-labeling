@@ -17,15 +17,17 @@ function frect2crect(frect) {
 @return (fabric.Rect)
 */
 function crect2frect(crect) {
-    return new fabric.Rect({
+    const rect = new fabric.Rect({
+        centeredRotation: true,
         left: crect.center.x - crect.size.width / 2,
         top: crect.center.y - crect.size.height / 2,
         width: crect.size.width,
         height: crect.size.height,
-        angle: crect.angle,
         stroke: "fuchsia",
         fill: "transparent"
     });
+    rect.rotate(crect.angle);
+    return rect;
 }
 
 /*
@@ -136,19 +138,13 @@ function computeGrabcut(maskgc = false) {
             result.fgdModel
         );
     } else {
-        if (input.type == "Rectangle") {
-            const rrect = frect2crect(input.data);
-            if (result) {
-                result.mask.delete();
-                result.fgdModel.delete();
-                result.bgdModel.delete();
-            }
-            result = rrectGrabCut(cache[nImage].image, rrect);
-        } else {
-            const points = fcircles2cmatrix(input.data);
-            result = polygonGrabCut(cache[nImage].image, points);
-            points.delete();
+        const rrect = frect2crect(input.data);
+        if (result) {
+            result.mask.delete();
+            result.fgdModel.delete();
+            result.bgdModel.delete();
         }
+        result = rrectGrabCut(cache[nImage].image, rrect);
     }
     result.points = extractPoints(
         result.mask,

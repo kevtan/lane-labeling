@@ -1,12 +1,17 @@
 const input_canvas = new fabric.Canvas('input', {
     defaultCursor: "crosshair"
 });
-input_canvas.on("mouse:wheel", mouse_event => {
+input_canvas.on("mouse:wheel", function(mouse_event) {
+    if (this.isDrawingMode) {
+        this.isDrawingMode = false;
+        this.renderAll();
+        this.isDrawingMode = true;
+    }
     mouse_event.e.preventDefault();
     const factor = mouse_event.e.deltaY > 0 ? 1.2 : 0.8;
     const zoom = input_canvas.getZoom() * factor;
-    if (zoom < 1 || zoom > 50) return;
-    input_canvas.zoomToPoint(mouse_event.pointer, zoom);
+    if (zoom < 0.8 || zoom > 50) return;
+    this.zoomToPoint(mouse_event.pointer, zoom);
 });
 
 const state = {
