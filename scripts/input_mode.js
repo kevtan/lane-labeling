@@ -3,9 +3,14 @@
 @param mode (String)
 */
 const setInputMode = mode => {
-    state.mode = mode
-    input_canvas.__eventListeners = new Object();
+    state.mode = mode;
+    // remove old event listeners
+    const listeners = input_canvas.__eventListeners;
+    delete listeners["mouse:down"];
+    delete listeners["mouse:up"];
+    delete listeners["mouse:dblclick"];
     input_canvas.set('isDrawingMode', false);
+    // add new event listeners
     switch (mode) {
         case "Pan":
             break;

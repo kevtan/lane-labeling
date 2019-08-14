@@ -1,6 +1,13 @@
 const input_canvas = new fabric.Canvas('input', {
     defaultCursor: "crosshair"
 });
+input_canvas.on("mouse:wheel", mouse_event => {
+    mouse_event.e.preventDefault();
+    const factor = mouse_event.e.deltaY > 0 ? 1.2 : 0.8;
+    const zoom = input_canvas.getZoom() * factor;
+    if (zoom < 1 || zoom > 50) return;
+    input_canvas.zoomToPoint(mouse_event.pointer, zoom);
+});
 
 const state = {
     lane: {

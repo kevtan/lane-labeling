@@ -53,6 +53,9 @@ window.onkeydown = e => {
         case 'f':
             setInputMode('Pan');
             break;
+        case 'F':
+            input_canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            break;
         case 'c':
             if (input.type == "Rectangle") input.data.set({
                 selectable: false,
