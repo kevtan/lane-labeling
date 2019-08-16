@@ -39,6 +39,10 @@ window.onkeydown = e => {
             if (input_canvas.freeDrawingBrush.width > 2)
                 input_canvas.freeDrawingBrush.width--;
             break;
+        case 'A':
+            input_canvas.remove(...input_canvas._objects)
+            setInputMode('Dot');
+            break;
         case 'a':
             setInputMode('Rectangle');
             break;
@@ -77,3 +81,4 @@ window.onkeydown = e => {
             break;
     }
 };
+

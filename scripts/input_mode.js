@@ -33,6 +33,26 @@ const setInputMode = mode => {
         case "Red Line":
             enableLineDrawing('red');
             break;
+        case "Dot":
+            input_canvas.selectable = false;
+            input_canvas.on("mouse:down", e => {
+                const seed = new cv.Point(
+                    Math.round(e.absolutePointer.y),
+                    Math.round(e.absolutePointer.x)
+                );
+                const mat = new cv.Mat();
+                cv.cvtColor(cache[getImageNo()].image, mat, cv.COLOR_RGB2GRAY);
+                const foreground = regionGrow(mat, seed, 40);
+                result = {
+                    points: foreground
+                };
+                const size = mat.size();
+                mat.delete();
+                const temp = new cv.Mat.zeros(size.height, size.width, cv.CV_8UC1);
+                updateMatrix(temp, foreground, [255]);
+                cv.imshow("extracted", temp);
+                temp.delete();
+            });
     };
 }
 
@@ -157,4 +177,34 @@ function enableCursorLine(mouse_event) {
     canvas.lineX = new fabric.Line([0, location.y, width, location.y], lineType);
     canvas.add(canvas.lineX);
     canvas.add(canvas.lineY);
+}
+
+function regionGrow(matrix, seed, threshold) {
+    const visited = new Set([pointToString(seed)]);
+    const pizza = [];
+    const point_queue = [seed];
+    let limit = 0;
+    while (point_queue.length != 0 && limit < 5000) {
+        const curr = point_queue.shift();
+        limit ++;
+        for (let i = -1; i <=1; i++) {
+            for (let j = -1; j <=1; j++) {
+                if (i == 0 && j == 0) continue;
+                const neighbor = new cv.Point(curr.x + i, curr.y + j);
+                if (neighbor.x < 0 || neighbor.y < 0 || neighbor.x >= matrix.rows || neighbor.y >= matrix.cols) continue;
+                const neighbor_intensity = matrix.ucharAt(neighbor.x, neighbor.y);
+                const curr_intensity = matrix.ucharAt(seed.x, seed.y);
+                if (!visited.has(pointToString(neighbor)) && Math.abs(neighbor_intensity - curr_intensity) < threshold) {
+                    point_queue.push(neighbor);
+                    visited.add(pointToString(neighbor));
+                    pizza.push([neighbor.x, neighbor.y]);
+                }
+            }
+        }
+    }
+    return pizza;
+}
+
+function pointToString(point) {
+    return `${point.x}|${point.y}`;
 }

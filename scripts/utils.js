@@ -139,11 +139,11 @@ function computeGrabcut(maskgc = false) {
         );
     } else {
         const rrect = frect2crect(input.data);
-        if (result) {
-            result.mask.delete();
-            result.fgdModel.delete();
-            result.bgdModel.delete();
-        }
+        // if (result) {
+        //     result.mask.delete();
+        //     result.fgdModel.delete();
+        //     result.bgdModel.delete();
+        // }
         result = rrectGrabCut(cache[nImage].image, rrect);
     }
     result.points = extractPoints(
