@@ -1,8 +1,7 @@
 # Semi-Automatic Tool for Labeling Lane Markings
-
-## General Overview
 This is a prototypical version of a lane marking labeling tool developed for autonomous truck-drucking company PlusAI summer of 2019 as an internship project. The aim is to devise a fast and efficient way to extract out lane markings from road surface images collected on data runs by trucks in the fleet. Prior to this kind of tool, the company used a very simple point-by-point line segment method for lane annotation.
 
+## Benefits and Optimzations
 There are many benefits to this new tool:
 1. Training data captures more semantic information than before after upgrading from a JSON document with point locations to mask images that contain labels for every pixel location in the image (i.e. a transition from coarse-grain to fine-grain annotations). Unfortunately, this bloats the amount of data that needs to be stored for each annotated image (2 8-bit 1-channel mask images for every RGB original image).
 2. Instead of only being able to label lane lines, annotators can also very easily label arbitrary lane markings like zebra lines, merge arrows, and bike paths to further enhance the capabilities of our lane detection models.
