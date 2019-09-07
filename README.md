@@ -40,3 +40,6 @@ In the below image strips, the first image is the original image given as input 
 ## User Interface
 Here is a look at the actual user interface (and an example user input) actually used to create the above annotation samples. It's pretty bare bones in terms of visual elements and database integration—it doesn't actually allow users to pull in images from a remote server yet, which our current tool allows—but this is just the prototype proof of concept.
 <img src="assets/end-product.png">
+
+## Links
+Here is a link to the presentation given about this tool I gave at the end of my internship: <a href="https://docs.google.com/presentation/d/13iTJtY_Zjhk1802EN6o4XwRwZfZt4w2V3w9gy2Yfs1U/edit?usp=sharing">Google Presentation</a>.
