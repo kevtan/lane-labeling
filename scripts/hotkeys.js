@@ -36,13 +36,26 @@ window.onkeydown = e => {
             input_canvas.freeDrawingBrush.width++;
             break;
         case 'E':
-            input_canvas.freeDrawingBrush.width--;
+            if (input_canvas.freeDrawingBrush.width > 2)
+                input_canvas.freeDrawingBrush.width--;
+            break;
+        case 'A':
+            input_canvas.remove(...input_canvas._objects)
+            setInputMode('Dot');
             break;
         case 'a':
             setInputMode('Rectangle');
             break;
         case 's':
             setInputMode('Polygon');
+            break;
+        case 'S':
+            const points = fcircles2cmatrix(input.data);
+            const rrect = cv.minAreaRect(points);
+            const frect = crect2frect(rrect);
+            input_canvas.add(frect);
+            input.type = "Rectangle";
+            input.data = frect;
             break;
         case 'd':
             setInputMode('Green Line');
@@ -68,3 +81,4 @@ window.onkeydown = e => {
             break;
     }
 };
+

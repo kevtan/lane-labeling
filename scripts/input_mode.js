@@ -33,6 +33,26 @@ const setInputMode = mode => {
         case "Red Line":
             enableLineDrawing('red');
             break;
+        case "Dot":
+            input_canvas.selectable = false;
+            input_canvas.on("mouse:down", e => {
+                const seed = new cv.Point(
+                    Math.round(e.absolutePointer.y),
+                    Math.round(e.absolutePointer.x)
+                );
+                const mat = new cv.Mat();
+                cv.cvtColor(cache[getImageNo()].image, mat, cv.COLOR_RGB2GRAY);
+                const foreground = regionGrow(mat, seed, 40);
+                result = {
+                    points: foreground
+                };
+                const size = mat.size();
+                mat.delete();
+                const temp = new cv.Mat.zeros(size.height, size.width, cv.CV_8UC1);
+                updateMatrix(temp, foreground, [255]);
+                cv.imshow("extracted", temp);
+                temp.delete();
+            });
     };
 }
 
@@ -42,7 +62,7 @@ const setInputMode = mode => {
 */
 const startRect = e => {
     input_canvas.remove(...input_canvas._objects);
-    const location = e.pointer;
+    const location = e.absolutePointer;
     input.data = new fabric.Rect({
         stroke: "fuchsia",
         fill: "transparent",
@@ -56,7 +76,7 @@ const startRect = e => {
 @param e (MouseEvent)
 */
 const endRect = e => {
-    const location = e.pointer;
+    const location = e.absolutePointer;
     let width = Math.round(location.x) - input.data.left;
     let height = Math.round(location.y) - input.data.top;
     if (width == 0 || height == 0) return;
@@ -91,6 +111,7 @@ function enableLineDrawing(color) {
         // plot the path on mask
         const value = color == 'green' ? new cv.Scalar(cv.GC_FGD) : new cv.Scalar(cv.GC_BGD);
         const points = input_canvas.freeDrawingBrush._points;
+        const width = path.strokeWidth > 0 ? path.strokeWidth : 1;
         for (let i = 0; i < points.length - 1; i++)
             cv.line(result.mask, points[i], points[i + 1], value, path.strokeWidth);
         computeGrabcut(true);
@@ -102,33 +123,17 @@ function enableLineDrawing(color) {
 @brief Adds a point to the current polygon.
 */
 const placePoint = e => {
-    // finish previous line, if exists
-    if (input.data.length != 0) {
-        const old_line = input_canvas._objects.pop();
-        old_line.set({ x2: e.pointer.x, y2: e.pointer.y });
-        input_canvas._objects.push(old_line);
-        delete input_canvas.__eventListeners["mouse:move"];
-    }
     // add new point to canvas
     const RADIUS = 2;
     const new_point = new fabric.Circle({
-        left: e.pointer.x - RADIUS,
-        top: e.pointer.y - RADIUS,
+        left: e.absolutePointer.x - RADIUS,
+        top: e.absolutePointer.y - RADIUS,
         radius: RADIUS,
         fill: 'fuchsia',
         hasControls: false
     });
     input.data.push(new_point);
     input_canvas.add(new_point);
-    // create line from new point
-    const new_line = new fabric.Line([e.pointer.x, e.pointer.y, e.pointer.x, e.pointer.y], {
-        stroke: 'fuchsia'
-    });
-    input_canvas.add(new_line);
-    input_canvas.on("mouse:move", f => {
-        new_line.set({ x2: f.pointer.x, y2: f.pointer.y });
-        input_canvas.renderAll();
-    });
 }
 
 /*
@@ -172,4 +177,34 @@ function enableCursorLine(mouse_event) {
     canvas.lineX = new fabric.Line([0, location.y, width, location.y], lineType);
     canvas.add(canvas.lineX);
     canvas.add(canvas.lineY);
+}
+
+function regionGrow(matrix, seed, threshold) {
+    const visited = new Set([pointToString(seed)]);
+    const pizza = [];
+    const point_queue = [seed];
+    let limit = 0;
+    while (point_queue.length != 0 && limit < 5000) {
+        const curr = point_queue.shift();
+        limit ++;
+        for (let i = -1; i <=1; i++) {
+            for (let j = -1; j <=1; j++) {
+                if (i == 0 && j == 0) continue;
+                const neighbor = new cv.Point(curr.x + i, curr.y + j);
+                if (neighbor.x < 0 || neighbor.y < 0 || neighbor.x >= matrix.rows || neighbor.y >= matrix.cols) continue;
+                const neighbor_intensity = matrix.ucharAt(neighbor.x, neighbor.y);
+                const curr_intensity = matrix.ucharAt(seed.x, seed.y);
+                if (!visited.has(pointToString(neighbor)) && Math.abs(neighbor_intensity - curr_intensity) < threshold) {
+                    point_queue.push(neighbor);
+                    visited.add(pointToString(neighbor));
+                    pizza.push([neighbor.x, neighbor.y]);
+                }
+            }
+        }
+    }
+    return pizza;
+}
+
+function pointToString(point) {
+    return `${point.x}|${point.y}`;
 }
