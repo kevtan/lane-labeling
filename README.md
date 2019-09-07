@@ -1,5 +1,6 @@
 # Semi-Automatic Tool for Labeling Lane Markings
 
+## General Overview
 This is a prototypical version of a lane marking labeling tool developed for autonomous truck-drucking company PlusAI summer of 2019 as an internship project. The aim is to devise a fast and efficient way to extract out lane markings from road surface images collected on data runs by trucks in the fleet. Prior to this kind of tool, the company used a very simple point-by-point line segment method for lane annotation.
 
 There are many benefits to this new tool:
@@ -18,3 +19,25 @@ And improvements that deal with the user experience:
 2. Sensical keyboard shortcuts (designed in a VIM-like fashion where the key codes don't actually give any indication of the function but related functions have hotkeys that are close together) that dramatically improve annotation efficiency and give the tool a sort of "coder-coolness."
 3. Being able to display a beautiful colored rendering of the instance and segmentation results despite only actually saving an memory-efficient 1-channel version of the masks.
 4. Allowing the user to change the brush size of their correction lines for smaller/larger corrections.
+
+## Example Usage
+In the below image strips, the first image is the original image given as input to the annotation tool. The second image is the annotated instance mask, which contains different colored pixels for different lanes (lane 1, lane 2, lane 3, etc.). The third image is the annotated segmentation mask, which contains different color pxiels for different semantic lane types (solid white lane, dashed yellow lane, etc.).
+<div>
+  <img src="assets/in01.png" width="275">
+  <img src="assets/in01-instance.png" width="275">
+  <img src="assets/in01-segmentation.png" width="275">
+</div>
+<div>
+  <img src="assets/in07.png" width="275">
+  <img src="assets/in07-instance.png" width="275">
+  <img src="assets/in07-segmentation.png" width="275">
+</div>
+<div>
+  <img src="assets/out02.png" width="275">
+  <img src="assets/out02-instance.png" width="275">
+  <img src="assets/out02-segmentation.png" width="275">
+</div>
+
+## User Interface
+Here is a look at the actual user interface (and an example user input) actually used to create the above annotation samples. It's pretty bare bones in terms of visual elements and database integration—it doesn't actually allow users to pull in images from a remote server yet, which our current tool allows—but this is just the prototype proof of concept.
+<img src="assets/end-product.png">
